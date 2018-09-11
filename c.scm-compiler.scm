@@ -1876,7 +1876,7 @@ form))
             (c.scm:c2args (cdr forms)))))
              
 (define (c.scm:c2begin args)
-  `(begin ,@(c1map c2expr args)))
+  `(begin ,@(c1map c.scm:c2expr args)))
 
 ;; 変数参照
 ;; lambda式内部でclosedな変数ならクロージャー
