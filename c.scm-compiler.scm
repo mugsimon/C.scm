@@ -289,18 +289,18 @@ form))
 (define (c1fmla fmla)
   (if (pair? fmla) 
       (case (car fmla)
-        ((AND) (cond ;; (and ...)
-                ((end? (cdr fmla)) c1true) ;; 引数がない 真
-                ((end? (cddr fmla)) (c1fmla (cadr fmla))) ;; 引数が１つ 
-                (else (cons 'FMLA-AND (c1map c1fmla (cdr fmla)))))) ;; 引数が２つ以上
-        ((OR) (cond ;; (or ...)
-               ((end? (cdr fmla)) c1false) ;; 引数がない 偽
-               ((end? (cddr fmla)) (c1fmla (cadr fmla))) ;; 引数が１つ
-               (else (cons 'FMLA-OR (c1map c1fmla (cdr fmla)))))) ;; 引数が２つ以上
-        ((NOT) (cond ((c1lookup 'not) (c1expr fmla)) ;; (not ...)
-                     ((or (end? (cdr fmla)) (not (end? (cddr fmla)))) ;; 引数なし, 引数２つ以上
-                      (scbad-args 'not (cdr fmla))) ;; 引数エラー
-                     (else (list 'FMLA-NOT (c1fmla (cadr fmla))))))
+        ((#;AND and) (cond ;; (and ...)
+                      ((end? (cdr fmla)) c1true) ;; 引数がない 真
+                      ((end? (cddr fmla)) (c1fmla (cadr fmla))) ;; 引数が１つ 
+                      (else (cons #;'FMLA-AND 'and (c1map c1fmla (cdr fmla)))))) ;; 引数が２つ以上
+        ((#;OR or) (cond ;; (or ...)
+                    ((end? (cdr fmla)) c1false) ;; 引数がない 偽
+                    ((end? (cddr fmla)) (c1fmla (cadr fmla))) ;; 引数が１つ
+                    (else (cons #;'FMLA-OR 'or (c1map c1fmla (cdr fmla)))))) ;; 引数が２つ以上
+        ((#;NOT not) (cond ((c1lookup 'not) (c1expr fmla)) ;; (not ...)
+                           ((or (end? (cdr fmla)) (not (end? (cddr fmla)))) ;; 引数なし, 引数２つ以上
+                            (scbad-args 'not (cdr fmla))) ;; 引数エラー
+                           (else (list #;'FMLA-NOT 'not (c1fmla (cadr fmla))))))
         (else (c1expr fmla))) 
       (c1expr fmla))) 
 
