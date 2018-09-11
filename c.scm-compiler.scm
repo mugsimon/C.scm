@@ -1769,15 +1769,31 @@ form))
 (define c.scm:*local-function* #t)
 (define c.scm:*function-name* 'c.scm)
 (define c.scm:*c.scm* (gensym))
+(define c.scm:*debug-mode* #f)
+
+(define (c.scm:mode . x)
+  (cond ((null? x)
+         (if c.scm:*debug-mode*
+             (print "c.scm: debug mode")
+             (print "c.scm: normal mode")))
+        ((boolean? (car x))
+         (if (car x)
+             (begin (set! c.scm:*debug-mode* (car x))
+                    (print "c.scm: debug mode"))
+             (begin (set! c.scm:*debug-mode* (car x))
+                    (print "c.scm: normal mode"))))
+        (else
+         (print "c.scm:mode: Invalid argument, on #t, off #f" (car x)))))
 
 
 (define (c.scm:compile-function name params body)
   (let ((x (dlet ((*env* '()))
                  (c1lam (cons params body)))))
     ;; (print "c.scm:debug, c.scm:compile-function: " (cadr x))
-    #;x
-    `(define ,name (lambda ,(map var-name (car x))
-       ,(c.scm:c2expr (cadr x))))))
+    (if c.scm:*debug-mode*
+        `(define ,name ,x)
+        `(define ,name (lambda ,(map var-name (car x))
+                         ,(c.scm:c2expr (cadr x)))))))
 
 ;; lambda式で閉じ込められる束縛変数をc.scm:*closed-vars*に追加する
 #;(define (c.scm:c2params x)
