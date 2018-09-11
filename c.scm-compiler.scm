@@ -1849,12 +1849,9 @@ form))
             form)))))
 
 (define (c.scm:c2if args)
-  `(if ,(c.scm:c2fmla (car args))
+  `(if ,(c.scm:c2expr (car args))
        ,(c.scm:c2expr (cadr args))
        ,(c.scm:c2expr (caddr args))))
-
-(define (c.scm:c2fmla fmla)
-  (c.scm:c2expr fmla)) ;; とりあえず or and notはあとで追加
                          
 (define (c.scm:c2symbol-fun name args)
   (cond ((c.scm:var? name)
