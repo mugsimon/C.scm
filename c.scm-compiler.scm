@@ -372,13 +372,15 @@ form))
 (define (c1and args)
   (cond ((end? args) c1true)
         ((end? (cdr args)) (c1expr (car args)))
-        (else (list #;c2and 'and (c1args args))))) ;; 引数を解析
+        (else `(and ,@(c1args args))
+         #;(list c2and (c1args args))))) ;; 引数を解析
 
 ;; c1expr, (c1or args)
 (define (c1or args)
   (cond ((end? args) c1false)
         ((end? (cdr args)) (c1expr (car args)))
-        (else (list #;c2or 'or (c1args args))))) ;; 引数を解析
+        (else `(or ,@(c1args args))
+         #;(list c2or (c1args args))))) ;; 引数を解析
 
 (define (c2and forms)
   (do ((forms forms (cdr forms)))
