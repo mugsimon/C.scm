@@ -1855,6 +1855,9 @@ form))
 
 (define (c.scm:c2or args)
   `(or ,@(c.scm:c2args args)))
+
+(define (c.scm:c2and args)
+  `(and ,@(c.scm:c2args args)))
                          
 (define (c.scm:c2symbol-fun name args)
   (cond ((c.scm:var? name)
