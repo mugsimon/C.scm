@@ -1065,7 +1065,7 @@ form))
 (define (var-funarg var) (cadr var)) ;; 関数ポジション以外で評価されるか
 (define (var-assigned var) (caddr var)) ;; 代入されるか
 (define (var-closed var) (cadddr var)) ;; lambdaに閉じ込められるか
-(define (var-local-fun var) (car (cddddr var))) ;; 
+(define (var-local-fun var) (car (cddddr var))) ;; ローカル関数かどうか
 (define (var-local-fun-args var) (cadr (cddddr var))) ;; ローカル関数引数と本体
 (define (var-loc var) (caddr (cddddr var))) ;; 変数の位置
 
