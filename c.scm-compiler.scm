@@ -987,7 +987,7 @@ form))
               )
         (wt (cond ((null? *clink*) '(get-const ()))
                   ((= (car *clink*) *level*)
-                   `(get-lval0 ,(- (cdr *clink*) *bp*)))
+                  `(get-lval0 ,(- (cdr *clink*) *bp*)))
                   (else `(get-lval ,*bp* ,(- *level* (car *clink*))
                                    ,(cdr *clink*)))))
         (wt `(make-promise ,(touch-label label)))
@@ -1032,7 +1032,7 @@ form))
                       (if (not (null? rest)) (c2lambda-bind rest))
                       (set! *sp* (- *sp* 1))
                       (dlet ((*value-to-go* 'BX) (*exit* 'XRETURN)) (c2expr body))))
-          (end-local-function magic))))
+          (end-local-function magic))))     
 
 (define (c2local-fun label cenv-length cenv-loc clink ccb-vs level
                      requireds rest body)
@@ -1813,6 +1813,26 @@ form))
     (else (c.scm:c2expr x))))
 
 (define (c.scm:c2letrec x)
+  (let loop ((defs (car x))
+             (cdefs '()))
+    (cond ((null? defs)
+           (if (null? cdefs)
+               (c.scm:c2expr (cadr x))
+               `(letrec ,(reverse cdefs) ,(c.scm:c2expr (cadr x)))))
+          (else
+           (let ((var (caar defs)))
+             (print "c.scm:debug, c.scm:c2letrec, " (var-local-fun var)) ;; debug
+             (if (var-local-fun var)
+                 (begin
+                   (set! c.scm:*codes* (cons `(define ,(c.scm:c2def (car defs))) c.scm:*codes*))
+                   (loop (cdr defs)
+                         cdefs))
+                 (loop (cdr defs)
+                       (cons (c.scm:c2def (car defs)) cdefs))))))))
+(define (c.scm:c2def def)
+  (list (var-name (car def)) (c.scm:c2expr (cadr def))))
+
+#;(define (c.scm:c2letrec x)
   ;;(print "c.scm:debug, c.scm:c2letrec (car x): " (car x)) ;; debug
   (let loop ((defs (car x)) ;; ローカル関数のリスト
              (cdefs '()))
@@ -1832,7 +1852,7 @@ form))
                        (loop (cdr defs)
                              (cons cdef cdefs)))))))))
 
-(define (c.scm:c2def def)
+#;(define (c.scm:c2def def)
   (dlet ((c.scm:*function-name* (var-name (car def))))
         (list c.scm:*function-name* (c.scm:c2expr (cadr def)))))
           
