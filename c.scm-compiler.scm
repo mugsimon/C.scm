@@ -1176,7 +1176,7 @@ form))
           (dolist (def defs) ;; def -> (var '() (lambda (...) ...))
                   (let ((var (car def)) ;; var
                         (form (caddr def))) ;; (lambda (...) ...)
-                    (if (and (pair? form) (eq? (car form) 'LAMBDA)) ;; 初期値がlambda式, r7rsでは不等価
+                    (if (and (pair? form) (eq? (car form) 'lambda #;'LAMBDA)) ;; 初期値がlambda式, r7rsでは不等価
                         (if (or (var-funarg var) (var-assigned var) (var-closed var)) 
                             (set-car! (cdr def) (c1lambda (cdr form))) ;; lambda式の解析結果 (var ここに格納 (lambda (...) ...))
                             (begin (set-car! (cdr def) (c1lam (cdr form))) ;; lambda式の解析結果 (var ここに格納 (lambda (...) ...))
