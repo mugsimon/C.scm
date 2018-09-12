@@ -1736,17 +1736,7 @@ form))
       (c.scm:compile-file input)
       (c.scm:compile-sexp input)))
 
-(define (c.scm:compile-file input)
-  (let ((iport (open-input-file input))
-        (oport (open-output-file (string-append "out-" input))))
-    (let loop ((exp (read iport)))
-      (cond ((eof-object? exp)
-             (close-input-port iport)
-             (close-output-port oport))
-            (else             
-             (display (c.scm:compile-sexp exp) oport)
-             (newline oport)
-             (loop (read iport)))))))
+(define (c.scm:compile-file input))
 
 (define (c.scm:compile-sexp sexp)
   (match sexp
@@ -1764,11 +1754,6 @@ form))
         (c1expr form)))
 
 (define c.scm:*codes* '())
-(define c.scm:*scheme-codes* '())
-(define c.scm:*internal-lambda* #f)
-(define c.scm:*local-function* #t)
-(define c.scm:*function-name* 'c.scm)
-(define c.scm:*c.scm* (gensym))
 (define c.scm:*debug-mode* #f)
 
 (define (c.scm:mode . x)
@@ -1785,77 +1770,13 @@ form))
         (else
          (print "c.scm:mode: Invalid argument, on #t, off #f" (car x)))))
 
-
 (define (c.scm:compile-function name params body)
   (let ((x (dlet ((*env* '()))
                  (c1lam (cons params body)))))
-    ;; (print "c.scm:debug, c.scm:compile-function: " (cadr x))
     (if c.scm:*debug-mode*
         `(define ,name ,x)
         `(define ,name (lambda ,(map var-name (car x))
                          ,(c.scm:c2expr (cadr x)))))))
-
-;; lambda式で閉じ込められる束縛変数をc.scm:*closed-vars*に追加する
-#;(define (c.scm:c2params x)
-  (let loop ((params (car x)))
-    (cond ((null? params)
-           c.scm:*closed-vars*)
-          (else
-           (let ((param (car params)))
-             (if (var-closed param)
-                 (set! c.scm:*closed-vars* (cons param c.scm:*closed-vars*))
-                 (loop (cdr params))))))))
-
-#;(define (c.scm:c2function x)
-  (case (car x)
-    ((letrec) (c.scm:c2letrec x))
-    ((begin) (c.scm:c2begin x))
-    (else (c.scm:c2expr x))))
-
-(define (c.scm:c2letrec x)
-  (let loop ((defs (car x))
-             (cdefs '()))
-    (cond ((null? defs)
-           (if (null? cdefs)
-               (c.scm:c2expr (cadr x))
-               `(letrec ,(reverse cdefs) ,(c.scm:c2expr (cadr x)))))
-          (else
-           (let ((var (caar defs)))
-             (print "c.scm:debug, c.scm:c2letrec, " (var-local-fun var)) ;; debug
-             (if (var-local-fun var)
-                 (begin
-                   (set! c.scm:*codes* (cons `(define ,(c.scm:c2def (car defs))) c.scm:*codes*))
-                   (loop (cdr defs)
-                         cdefs))
-                 (loop (cdr defs)
-                       (cons (c.scm:c2def (car defs)) cdefs))))))))
-(define (c.scm:c2def def)
-  (list (var-name (car def)) (c.scm:c2expr (cadr def))))
-
-#;(define (c.scm:c2letrec x)
-  ;;(print "c.scm:debug, c.scm:c2letrec (car x): " (car x)) ;; debug
-  (let loop ((defs (car x)) ;; ローカル関数のリスト
-             (cdefs '()))
-    (cond ((null? defs)
-           ;;(print "c.scm:debug, c.scm:c2letrec, cdefs: " cdefs) ;; debug
-           (if (null? cdefs)
-               (c.scm:c2expr (cadr x)) 
-               `(letrec ,(reverse cdefs) ,(c.scm:c2expr (cadr x)))))
-          (else
-           (dlet ((c.scm:*local-function* #t))
-                 (let ((cdef (c.scm:c2def (car defs))))
-                   (print "c.scm:debug, c.scm:c2letrec, cdef: " cdef) ;; debug
-                   (print "c.scm:debug, c.scm:c2letrec, c.scm:*local-function*: " c.scm:*local-function*) ;; debug
-                   (if c.scm:*local-function*
-                       (loop (cdr defs)
-                             cdefs)
-                       (loop (cdr defs)
-                             (cons cdef cdefs)))))))))
-
-#;(define (c.scm:c2def def)
-  (dlet ((c.scm:*function-name* (var-name (car def))))
-        (list c.scm:*function-name* (c.scm:c2expr (cadr def)))))
-          
 
 (define (c.scm:c2expr form)
   (cond ((c.scm:symbol? form)
@@ -1886,21 +1807,56 @@ form))
            (else
             form)))))
 
+;; 変数参照
+(define (c.scm:c2vref name)
+  (cond ((c.scm:var? name)
+         (var-name name))
+        (else
+         name)))
+
 (define (c.scm:c2if args)
   `(if ,(c.scm:c2expr (car args))
        ,(c.scm:c2expr (cadr args))
        ,(c.scm:c2expr (caddr args))))
 
+(define (c.scm:c2and args)
+  `(and ,@(c.scm:c2args args)))
+
 (define (c.scm:c2or args)
   `(or ,@(c.scm:c2args args)))
 
-(define (c.scm:c2and args)
-  `(and ,@(c.scm:c2args args)))
-                         
+(define (c.scm:c2begin args)
+  `(begin ,@(c1map c.scm:c2expr args)))
+
+(define (c.scm:c2lambda form)
+  (let ((params (if (c.scm:pair? (car form))
+                    (map var-name (car form))
+                    (var-name (car form))))
+        (body (c.scm:c2expr (cadr form))))
+    `(lambda ,params ,body)))
+
+(define (c.scm:c2letrec x)
+  (let loop ((defs (car x))
+             (cdefs '()))
+    (cond ((null? defs)
+           (if (null? cdefs)
+               (c.scm:c2expr (cadr x))
+               `(letrec ,(reverse cdefs) ,(c.scm:c2expr (cadr x)))))
+          (else
+           (let ((var (caar defs)))
+             (if (var-local-fun var)
+                 (begin
+                   (set! c.scm:*codes* (cons `(define ,(c.scm:c2def (car defs))) c.scm:*codes*))
+                   (loop (cdr defs)
+                         cdefs))
+                 (loop (cdr defs)
+                       (cons (c.scm:c2def (car defs)) cdefs))))))))
+
+(define (c.scm:c2def def)
+  (list (var-name (car def)) (c.scm:c2expr (cadr def))))
+
 (define (c.scm:c2symbol-fun name args)
   (cond ((c.scm:var? name)
-         (if c.scm:*internal-lambda*
-             (set! c.scm:*local-function* #f))
          `(,(var-name name) ,@(c.scm:c2args args)))
         (else
          `(,name ,@(c.scm:c2args args)))))
@@ -1910,33 +1866,7 @@ form))
       '()
       (cons (c.scm:c2expr (car forms))
             (c.scm:c2args (cdr forms)))))
-             
-(define (c.scm:c2begin args)
-  `(begin ,@(c1map c.scm:c2expr args)))
-
-;; 変数参照
-;; lambda式内部でclosedな変数ならクロージャー
-(define (c.scm:c2vref name)
-  (cond ((c.scm:var? name)
-         (if (and c.scm:*internal-lambda* 
-                  (var-closed name))
-             (set! c.scm:*local-function* #f))
-         (var-name name))
-        (else
-         name)))
           
-(define (c.scm:c2lambda form)
-  (dlet ((c.scm:*internal-lambda* #t))
-        (let ((params (if (c.scm:pair? (car form))
-                          (map var-name (car form))
-                          (var-name (car form))))
-              (body (c.scm:c2expr (cadr form))))
-          (if c.scm:*local-function*
-              (set! c.scm:*codes* (cons `(define ,c.scm:*function-name*
-                                           (lambda ,params ,body))
-                                        c.scm:*codes*))
-              `(lambda ,params ,body)))))
-
 (define (c.scm:symbol? x)
   (or (c.scm:var? x)
       (symbol? x)))
