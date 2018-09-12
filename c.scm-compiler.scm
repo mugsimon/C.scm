@@ -1162,8 +1162,7 @@ form))
     (dlet ((*env* *env*)) ;; macrolib.lsp
           ;; letrecで束縛されるすべてのローカル変数を情報変数varにし, (var '() 初期値)をdefsに追加, 情報変数varを*env*に追加
           ;; 拡張した環境*env*の元でletrec式の本体を解析
-          (dolist (def (car args)) ;; macrolib.lsp, def:ローカルdefineの１つ
-                  
+          (dolist (def (car args)) ;; macrolib.lsp, def:ローカルdefineの１つ                  
                   (if (or (end? def)
                           (end? (cdr def))
                           (not (end? (cddr def))))
@@ -1179,7 +1178,8 @@ form))
                     (if (and (pair? form) (eq? (car form) 'lambda #;'LAMBDA)) ;; 初期値がlambda式, r7rsでは不等価
                         (if (or (var-funarg var) (var-assigned var) (var-closed var)) 
                             (set-car! (cdr def) (c1lambda (cdr form))) ;; lambda式の解析結果 (var ここに格納 (lambda (...) ...))
-                            (begin (set-car! (cdr def) (c1lam (cdr form))) ;; lambda式の解析結果 (var ここに格納 (lambda (...) ...))
+                            (begin (set-car! (cdr def) `(lambda ,@(c1lam (cdr form)))) ;; c.scm
+                                   #;(set-car! (cdr def) (c1lam (cdr form))) ;; lambda式の解析結果 (var ここに格納 (lambda (...) ...))
                                    (set-var-local-fun var #t) ;; 局所関数, letrecで定義されるから
                                    (set-var-local-fun-args var (cadr def)))) ;; lambda式の解析結果を変数情報に格納
                         (set-car! (cdr def) (c1expr form))))) ;; 初期値の解析結果を格納
@@ -1755,6 +1755,8 @@ form))
 
 (define c.scm:*codes* '())
 (define c.scm:*debug-mode* #f)
+(define (c.scm:init)
+  (set! c.scm:*codes* '()))
 
 (define (c.scm:mode . x)
   (cond ((null? x)
@@ -1846,13 +1848,15 @@ form))
            (let ((var (caar defs)))
              (if (var-local-fun var)
                  (begin
-                   (set! c.scm:*codes* (cons `(define ,(c.scm:c2def (car defs))) c.scm:*codes*))
+                   (set! c.scm:*codes* (cons `(define ,@(c.scm:c2def (car defs))) c.scm:*codes*))
                    (loop (cdr defs)
                          cdefs))
                  (loop (cdr defs)
                        (cons (c.scm:c2def (car defs)) cdefs))))))))
 
 (define (c.scm:c2def def)
+  (print "c.scm:debug, c.scm:c2def, " def) ;; debug
+  (print)
   (list (var-name (car def)) (c.scm:c2expr (cadr def))))
 
 (define (c.scm:c2symbol-fun name args)
