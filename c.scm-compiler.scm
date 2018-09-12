@@ -219,7 +219,12 @@ form))
 
 ;; c1quote
 (define (c1constant x) #;(list c2constant x)
-  x)
+  (if (or (boolean? x)
+          (number? x)
+          (char? x)
+          (string? x))
+      x
+      `(quote ,x)))
 
 (define (c2constant x)
   (case *value-to-go*
@@ -1799,7 +1804,7 @@ rest ;; (not (null? vl))が偽ならnull, 真なら記号vlの情報を格納し
                     ((let*) (c.scm:c2let* args))
                     ((letrec) (c.scm:c2letrec args))
                     ((set!) (c.scm:c2set! args))
-                    ((quote) `(quote ,args))
+                    ((quote) (c.scm:c2quote args))
                     (else
                      (c.scm:c2symbol-fun fun args)))))))
         (else
@@ -1857,6 +1862,9 @@ rest ;; (not (null? vl))が偽ならnull, 真なら記号vlの情報を格納し
 
 (define (c.scm:c2def def)
   (list (var-name (car def)) (c.scm:c2expr (cadr def))))
+
+(define (c.scm:c2quote args)
+  `(quote ,@args))
 
 (define (c.scm:c2symbol-fun name args)
   (cond ((c.scm:var? name)
