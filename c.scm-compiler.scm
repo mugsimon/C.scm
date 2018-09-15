@@ -1764,7 +1764,7 @@ rest ;; (not (null? vl))が偽ならnull, 真なら記号vlの情報を格納し
 (define (c.scm:init)
   (set! c.scm:*codes* '()))
 
-(define (c.scm:mode . x)
+(define (c.scm:debug . x)
   (cond ((null? x)
          (if c.scm:*debug-mode*
              (print "c.scm: debug mode")
