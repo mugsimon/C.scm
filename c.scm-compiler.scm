@@ -1200,7 +1200,7 @@ rest ;; (not (null? vl))が偽ならnull, 真なら記号vlの情報を格納し
 
 
 
-;; 何をやってるかよくわからん？？？, lambdaの解析を上書きしているような気がする？？？
+;; 初期値を解析した結果、funarg | assigned | closedな使われ方があったため変更
 ;; c1letrec, (c1letrec-aux defs), defs:(var ... (lambda (...) ...))のリスト
 (define (c1letrec-aux defs)
   (define (parse defs) 
