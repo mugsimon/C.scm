@@ -1101,7 +1101,7 @@ rest ;; (not (null? vl))が偽ならnull, 真なら記号vlの情報を格納し
           (c1named-let (car args) (cadr args) (cddr args))) ;; 名前, 束縛, 本体
       (let ((body '())
             (defs '()))
-        ;; 束縛変数を情報変数に拡張, 初期値とともにdefsに追加, 情報変数を*envに追加し, 本体を評価
+        ;; 束縛変数を情報変数に拡張, 初期値とともにdefsに追加, 情報変数を*env*に追加し, 本体を評価
         (dlet ((*env* *env*)) ;; *env*を退避
               (dolist (def (car args)) ;; 束縛部分
                       (if (or (end? def) (end? (cdr def)) (not (end? (cddr def))))
@@ -1842,6 +1842,17 @@ rest ;; (not (null? vl))が偽ならnull, 真なら記号vlの情報を格納し
                     (var-name (car form))))
         (body (c.scm:c2expr (cadr form))))
     `(lambda ,params ,body)))
+
+(define (c.scm:c2let form)
+  (if (c.scm:var? (car form))
+      (c.scm:c2named-let form)
+      (let loop ((defs (car form))
+                 (cdefs '()))
+        (cond ((null? defs)
+               `(let ,(reverse cdefs) ,(c.scm:c2expr (cadr form))))
+              (else
+               (loop (cdr defs)
+                     (cons (list (var-name (caar defs)) (c.scm:c2expr (cdar defs))) cdefs)))))))
 
 (define (c.scm:c2letrec x)
   (let loop ((defs (car x))
