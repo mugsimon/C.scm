@@ -1913,6 +1913,7 @@ rest ;; (not (null? vl))が偽ならnull, 真なら記号vlの情報を格納し
 ;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; closure conversion ;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; f
 (define (c.scm:f sexp)
   (cond ((c.scm:var? sexp)
          (list sexp))
@@ -1977,6 +1978,20 @@ rest ;; (not (null? vl))が偽ならnull, 真なら記号vlの情報を格納し
         (else
          (cons (car x) (c.scm:difference (cdr x) y)))))
 
+;; c
+(define (c.scm:c sexp)
+  (cond ((c.scm:self-eval? sexp)
+         sexp)
+        (else
+         (match sexp
+                (`(define ,name ,value)
+                 `(define ,name ,(c.scm:c value)))
+                (`(let ,defs ,body)
+                 (c.scm:c-let defs body))
+                (`(if ,e1 ,e2 ,e3)
+                 (c.scm:c-if e1 e2 e3))
+                (else
+                 (print "c.scm:c else"))))))
 
 
 
