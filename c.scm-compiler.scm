@@ -1737,6 +1737,12 @@ rest ;; (not (null? vl))が偽ならnull, 真なら記号vlの情報を格納し
 ;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; c.scmプログラム ;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;
+(define (c.scm:self-eval? x)
+  (or (boolean? x)
+      (number? x)
+      (char? x)
+      (string? x)))
+
 (define (c.scm:compile input)
   (if (string? input)
       (c.scm:compile-file input)
@@ -1904,7 +1910,72 @@ rest ;; (not (null? vl))が偽ならnull, 真なら記号vlの情報を格納し
          (else
           #f)))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; closure conversion ;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;
+(define (c.scm:f sexp)
+  (cond ((c.scm:var? sexp)
+         (list sexp))
+        ((symbol? sexp)
+         '())
+        ((c.scm:self-eval? sexp)
+         '())
+        (else
+         (match sexp
+                (`(define ,x ,exp)
+                 '())
+                (`(lambda ,params ,body)          
+                 (c.scm:f-lambda params body))
+                (`(let ,defs ,body)
+                 (c.scm:f-let defs body))
+                (`(if ,e1 ,e2 ,e3)
+                 (c.scm:f-if e1 e2 e3))
+                (else
+                 (c.scm:f-function sexp))))))
 
+(define (c.scm:f-lambda params body)
+  (c.scm:difference (c.scm:f body) params))
+  
+(define (c.scm:f-let defs body)
+  (let ((vars (map car defs)))
+    (c.scm:difference
+     (c.scm:union
+      (let loop ((exps (map cdr defs)))
+        (cond ((null? exps)
+               '())
+              (else
+               (c.scm:union (c.scm:f (car exps)) (loop (cdr exps))))))
+      (c.scm:f body))
+     vars)))
+
+(define (c.scm:f-if e1 e2 e3)
+  (c.scm:union (c.scm:union (c.scm:f e1)
+                            (c.scm:f e2))
+               (c.scm:f e3)))
+
+(define (c.scm:f-function sexp)
+  (let loop ((sexp sexp))
+    (cond ((null? sexp)
+           '())
+          (else
+           (c.scm:union (c.scm:f (car sexp))
+                        (loop (cdr sexp)))))))
+
+(define (c.scm:union x y)
+  (cond ((null? x)
+         y)
+        ((member (car x) y)
+         (c.scm:union (cdr x) y))
+        (else
+         (cons (car x) (c.scm:union (cdr x) y)))))
+
+(define (c.scm:difference x y)
+  (cond ((null? x)
+         '())
+        ((member (car x) y)
+         (c.scm:difference (cdr x) y))
+        (else
+         (cons (car x) (c.scm:difference (cdr x) y)))))
 
 
 
