@@ -1993,6 +1993,23 @@ rest ;; (not (null? vl))が偽ならnull, 真なら記号vlの情報を格納し
                 (else
                  (print "c.scm:c else"))))))
 
+(define (c.scm:c-let defs body)
+  (let loop ((defs defs)
+             (cdefs '()))
+    (cond ((null? defs)
+           `(let ,(reverse cdefs) ,(c.scm:c body)))
+          (else
+           (let ((def (car defs)))
+             (loop (cdr defs)
+                   (cons (cons (car def)
+                               (c.scm:c (cdr def)))
+                         cdefs)))))))
+
+(define (c.scm:c-if e1 e2 e3)
+  `(if ,(c.scm:c e1)
+       ,(c.scm:c e2)
+       ,(c.scm:c e3)))
+
 
 
 
