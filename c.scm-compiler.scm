@@ -1990,6 +1990,8 @@ rest ;; (not (null? vl))が偽ならnull, 真なら記号vlの情報を格納し
                  (c.scm:c-let defs body))
                 (`(if ,e1 ,e2 ,e3)
                  (c.scm:c-if e1 e2 e3))
+                (`(lambda ,params ,body)
+                 (c.scm:c-lambda params body))
                 (else
                  (print "c.scm:c else"))))))
 
@@ -2009,6 +2011,16 @@ rest ;; (not (null? vl))が偽ならnull, 真なら記号vlの情報を格納し
   `(if ,(c.scm:c e1)
        ,(c.scm:c e2)
        ,(c.scm:c e3)))
+
+(define (c.scm:c-lambda params body)
+  `(lambda (,@(c.scm:f-lambda params body) ,@params) ,body))
+
+(define (c.scm:c-function form))
+
+(define (c.scm:c-primitive form)
+  `(,(car form) ,@(map c.scm:c (cdr form))))
+
+
 
 
 
