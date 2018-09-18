@@ -1766,7 +1766,7 @@ rest ;; (not (null? vl))が偽ならnull, 真なら記号vlの情報を格納し
         (c1expr form)))
 
 (define c.scm:*codes* '())
-(define c.scm:*debug-mode* #f)
+(define c.scm:*debug-mode* #t)
 (define (c.scm:init)
   (set! c.scm:*codes* '()))
 
@@ -1912,7 +1912,7 @@ rest ;; (not (null? vl))が偽ならnull, 真なら記号vlの情報を格納し
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; closure conversion ;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;  
 ;; f
 (define (c.scm:f sexp)
   (cond ((c.scm:var? sexp)
@@ -1982,6 +1982,8 @@ rest ;; (not (null? vl))が偽ならnull, 真なら記号vlの情報を格納し
 (define (c.scm:c sexp)
   (cond ((c.scm:self-eval? sexp)
          sexp)
+        ((c.scm:var? sexp)
+         sexp)
         (else
          (match sexp
                 (`(define ,name ,value)
@@ -2015,7 +2017,8 @@ rest ;; (not (null? vl))が偽ならnull, 真なら記号vlの情報を格納し
 (define (c.scm:c-lambda params body)
   `(lambda (,@(c.scm:f-lambda params body) ,@params) ,body))
 
-(define (c.scm:c-function form))
+(define (c.scm:c-function form)
+  `(,(car form) ,@(c.scm:f (var-local-fun-args (car form))) ,@(map c.scm:c (cdr form))))
 
 (define (c.scm:c-primitive form)
   `(,(car form) ,@(map c.scm:c (cdr form))))
