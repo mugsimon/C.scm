@@ -1917,50 +1917,88 @@ rest ;; (not (null? vl))が偽ならnull, 真なら記号vlの情報を格納し
 (define (c.scm:f sexp)
   (cond ((c.scm:var? sexp)
          (list sexp))
-        ((symbol? sexp)
+        ((or (symbol? sexp)
+             (c.scm:self-eval? sexp))
          '())
-        ((c.scm:self-eval? sexp)
-         '())
-        (else
-         (match sexp
-                (`(define ,x ,exp)
-                 '())
-                (`(lambda ,params ,body)          
-                 (c.scm:f-lambda params body))
-                (`(let ,defs ,body)
-                 (c.scm:f-let defs body))
-                (`(if ,e1 ,e2 ,e3)
-                 (c.scm:f-if e1 e2 e3))
-                (else
-                 (c.scm:f-function sexp))))))
+        ((c.scm:pair? sexp)
+         (let ((fun (car sexp))
+               (args (cdr sexp)))
+           (case fun
+                    ((if) (c.scm:f-if args))
+                    ((and) (c.scm:f-and args))
+                    ((or) (c.scm:f-or args))
+                    ((begin) (c.scm:f-begin args))
+                    ((lambda) (c.scm:f-lambda args))
+                    ((delay) (c.scm:f-delay args))
+                    ((let) (c.scm:f-let args))
+                    ((let*) (c.scm:f-let args))
+                    ((letrec) (c.scm:f-letrec args))
+                    ((set!) (c.scm:f-set! args))
+                    ((quote) (c.scm:f-quote args))
+                    (else
+                     (c.scm:f-symbol-fun fun args)))))))
 
-(define (c.scm:f-lambda params body)
-  (c.scm:difference (c.scm:f body) params))
-  
-(define (c.scm:f-let defs body)
-  (let ((vars (map car defs)))
+(define (c.scm:f-if args)
+  (c.scm:union (c.scm:union (c.scm:f (car args))
+                            (c.scm:f (cadr args)))
+               (c.scm:f (caddr args))))
+
+(define (c.scm:f-and args)
+  (c.scm:union (c.scm:f (car args))
+               (c.scm:f-and (cdr args))))
+
+(define (c.scm:f-or args)
+  (c.scm:union (c.scm:f (car args))
+               (c.scm:f-or (cdr args))))
+
+(define (c.scm:f-begin args)
+  (c.scm:union (c.scm:f (car args))
+               (c.scm:f-begin (cdr args))))
+
+(define (c.scm:f-lambda args)
+  (c.scm:difference (c.scm:f (cadr args))
+                    (car args)))
+
+(define (c.scm:f-let args)
+  (let ((vars (map car (car args))))
     (c.scm:difference
      (c.scm:union
-      (let loop ((exps (map cdr defs)))
+      (let loop ((exps (map cdr (car args))))
         (cond ((null? exps)
                '())
               (else
                (c.scm:union (c.scm:f (car exps)) (loop (cdr exps))))))
-      (c.scm:f body))
+      (c.scm:f (cadr args)))
      vars)))
 
-(define (c.scm:f-if e1 e2 e3)
-  (c.scm:union (c.scm:union (c.scm:f e1)
-                            (c.scm:f e2))
-               (c.scm:f e3)))
+(define (c.scm:f-letrec x)
+  (let ((vars (map car (car x))))
+    (c.scm:difference
+     (c.scm:union
+      (let loop ((exps (map cadr (car x))))
+        (cond ((null? exps)
+               '())
+              (else
+               (c.scm:union (c.scm:f (car exps)) (loop (cdr exps))))))
+      (c.scm:f (cadr x)))
+     vars)))
 
-(define (c.scm:f-function sexp)
-  (let loop ((sexp sexp))
-    (cond ((null? sexp)
-           '())
-          (else
-           (c.scm:union (c.scm:f (car sexp))
-                        (loop (cdr sexp)))))))
+(define (c.scm:f-set! x)
+  (c.scm:union (c.scm:f (car x))
+               (c.scm:f (cadr x))))
+
+(define (c.scm:f-quote x)
+  '())
+
+(define (c.scm:f-symbol-fun fun args)
+  (if (null? args)
+      (c.scm:f fun)
+      (let loop ((args args))
+        (cond ((null? args)
+               '())
+              (else
+               (c.scm:union (c.scm:f (car args))
+                            (loop (cdr args))))))))
 
 (define (c.scm:union x y)
   (cond ((null? x)
