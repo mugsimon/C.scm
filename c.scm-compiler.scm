@@ -1751,6 +1751,28 @@ rest ;; (not (null? vl))が偽ならnull, 真なら記号vlの情報を格納し
 (define (c.scm:compile-file input))
 
 (define (c.scm:compile-sexp sexp)
+  (if (pair? sexp)
+      (case (car sexp)
+        ((define)
+         (cond((or (null? (cdr sexp)) ;; (define)
+                   (null? (cddr sexp))) ;; (define var)
+               (error "C.SCM:ERROR, c.scm:compile-sexp, syntax-error:" sexp))
+              ((symbol? (cadr sexp)) ;; (define var ...)
+               (if (null? (cdddr sexp)) ;; (define var exp)
+                   (if (and (pair? (caddr sexp))
+                            (eq? (caaddr sexp) 'lambda))
+                       `(define ,(cadr sexp) ,(c.scm:compile-function (cdaddr sexp))) ;; (define var (lambda ...))
+                       `(define ,(cadr sexp) ,(c.scm:compile-expr (caddr sexp)))) ;; (define var exp)
+                   (error "C.SCM:ERROR, c.scm:compile-sexp, syntax-error:" sexp))) ;; (define var exp ...)
+              ((pair? (cadr sexp))
+               `(define ,(caadr sexp) ,(c.scm:compile-function (cons (cdadr sexp) (cddr sexp))))) ;; (define (var ...) ...)
+              (else
+               (error "C.SCM:ERROR, c.scm:compile-sexp, syntax-error:" sexp))))
+        (else
+         (c.scm:compile-expr sexp))) ;; (fun ...)
+      (c.scm:compile-expr sexp))) ;; atom
+
+#;(define (c.scm:compile-sexp sexp)
   (match sexp
          (`(define (,x . ,params) . ,body)
           (c.scm:compile-function x params body))
@@ -1763,9 +1785,9 @@ rest ;; (not (null? vl))が偽ならnull, 真なら記号vlの情報を格納し
 
 (define (c.scm:compile-expr form)
   (dlet ((*env* '()))
-        (c1expr form)))
+        (c.scm:c2expr
+        (c1expr form))))
 
-(define c.scm:*codes* '())
 (define c.scm:*local-functions* '())
 (define c.scm:*debug-mode* #t)
 (define (c.scm:init)
@@ -1785,7 +1807,16 @@ rest ;; (not (null? vl))が偽ならnull, 真なら記号vlの情報を格納し
         (else
          (print "c.scm:mode: Invalid argument, on #t, off #f" (car x)))))
 
-(define (c.scm:compile-function name params body)
+(define (c.scm:compile-function form)
+  (if (or (symbol? (car form))
+          (pair? (car form)))
+      (let ((x (dlet ((*env* '()))
+                     (c1lam form))))
+        (if c.scm:*debug-mode*
+            x
+            `(lambda ,(car form) ,(c.scm:c2expr (c.scm:h (c.scm:c (cadr x)))))))))
+            
+#;(define (c.scm:compile-function name params body)
   (let ((x (dlet ((*env* '()))
                  (c1lam (cons params body)))))
     (if c.scm:*debug-mode*
@@ -1861,7 +1892,25 @@ rest ;; (not (null? vl))が偽ならnull, 真なら記号vlの情報を格納し
                (loop (cdr defs)
                      (cons (list (var-name (caar defs)) (c.scm:c2expr (cdar defs))) cdefs)))))))
 
+(define (c.scm:c2let* form)
+  (let loop ((defs (car form))
+             (cdefs '()))
+    (cond ((null? defs)
+           `(let* ,(reverse cdefs) ,(c.scm:c2expr (cadr form))))
+          (else
+           (loop (cdr defs)
+                 (cons (list (var-name (caar defs)) (c.scm:c2expr (cdar defs))) cdefs))))))
+
 (define (c.scm:c2letrec x)
+  (let loop ((defs (car x))
+             (cdefs '()))
+    (cond ((null? defs)
+           `(letrec ,(reverse cdefs) ,(c.scm:c2expr (cadr x))))
+          (else
+           (loop (cdr defs)
+                 (cons (c.scm:c2def (car defs)) cdefs))))))             
+                 
+#;(define (c.scm:c2letrec x)
   (let loop ((defs (car x))
              (cdefs '()))
     (cond ((null? defs)
@@ -2045,9 +2094,9 @@ rest ;; (not (null? vl))が偽ならnull, 真なら記号vlの情報を格納し
               (c.scm:c-symbol-fun fun args)))))))
 
 (define (c.scm:c-if args)
-  `(if (c.scm:c (car args))
-       (c.scm:c (cadr args))
-       (c.scm:c (caddr args))))
+  `(if ,(c.scm:c (car args))
+       ,(c.scm:c (cadr args))
+       ,(c.scm:c (caddr args))))
 
 (define (c.scm:c-and args)
   `(and ,@(map c.scm:c args)))
@@ -2101,7 +2150,7 @@ rest ;; (not (null? vl))が偽ならnull, 真なら記号vlの情報を格納し
 ;; 出力:入れ子の関数を含まない項、新しい定義のリスト
 (define (c.scm:h sexp)
   (cond ((c.scm:var? sexp)
-         (list sexp))
+         sexp)
         ((or (symbol? sexp)
              (c.scm:self-eval? sexp))
          sexp)
@@ -2124,9 +2173,9 @@ rest ;; (not (null? vl))が偽ならnull, 真なら記号vlの情報を格納し
                      (c.scm:h-symbol-fun fun args)))))))
 
 (define (c.scm:h-if args)
-  `(if (c.scm:h (car args))
-       (c.scm:h (cadr args))
-       (c.scm:h (caddr args))))
+  `(if ,(c.scm:h (car args))
+       ,(c.scm:h (cadr args))
+       ,(c.scm:h (caddr args))))
 
 (define (c.scm:h-and args)
   `(and ,@(map c.scm:h args)))
