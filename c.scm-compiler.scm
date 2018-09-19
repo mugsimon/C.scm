@@ -1762,7 +1762,8 @@ rest ;; (not (null? vl))が偽ならnull, 真なら記号vlの情報を格納し
                (newline (current-output-port)))
               (else
                (let ((def (car defs)))
-                 (display `(define ,(var-name (car def)) ,(c.scm:c2expr (cadr def))) (current-output-port)))
+                 (display `(define ,(var-name (car def)) ,(c.scm:c2expr (cadr def))) (current-output-port))
+                 (newline (current-output-port)))
                (loop (cdr defs)))))))
 
 (define (c.scm:compile-file input))
