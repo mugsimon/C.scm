@@ -2056,7 +2056,7 @@ rest ;; (not (null? vl))が偽ならnull, 真なら記号vlの情報を格納し
   `(or ,@(map c.scm:c args)))
 
 (define (c.scm:c-lambda args)
-  `(lambda (,@(c.scm:f-lambda args) ,@(car args)) ,(cadr args)))
+  `(lambda (,@(c.scm:f-lambda args) ,@(car args)) ,(c.scm:c (cadr args))))
 
 (define (c.scm:c-let args)
   (let loop ((defs (car args))
