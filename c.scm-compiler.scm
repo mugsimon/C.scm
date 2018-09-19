@@ -1743,11 +1743,27 @@ rest ;; (not (null? vl))が偽ならnull, 真なら記号vlの情報を格納し
       (char? x)
       (string? x)))
 
+(define c.scm:*local-functions* '())
+
 (define (c.scm:compile input)
   (cond ((string? input)
          (c.scm:compile-file input))
         (else
-         (c.scm:compile-sexp input))))
+         (dlet ((c.scm:*local-functions* '()))
+               (display (c.scm:compile-sexp input) (current-output-port))
+               (newline (current-output-port))
+               (c.scm:write-local-functions)))))
+
+(define (c.scm:write-local-functions)
+  (if (null? c.scm:*local-functions*)
+      (newline (current-output-port))
+      (let loop ((defs c.scm:*local-functions*))
+        (cond ((null? defs)
+               (newline (current-output-port)))
+              (else
+               (let ((def (car defs)))
+                 (display `(define ,(var-name (car def)) ,(c.scm:c2expr (cadr def))) (current-output-port)))
+               (loop (cdr defs)))))))
 
 (define (c.scm:compile-file input))
 
@@ -1787,10 +1803,9 @@ rest ;; (not (null? vl))が偽ならnull, 真なら記号vlの情報を格納し
 (define (c.scm:compile-expr form)
   (dlet ((*env* '()))
         (c.scm:c2expr
-        (c1expr form))))
+         (c1expr form))))
 
-(define c.scm:*local-functions* '())
-(define c.scm:*debug-mode* #t)
+(define c.scm:*debug-mode* #f)
 
 (define (c.scm:debug . x)
   (cond ((null? x)
