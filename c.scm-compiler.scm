@@ -2019,6 +2019,8 @@ rest ;; (not (null? vl))が偽ならnull, 真なら記号vlの情報を格納し
 
 ;; c
 ;; closing
+;; lambda式のパラメタに自由変数を追加
+;; 関数呼び出しのパラメタに自由変数を追加
 (define (c.scm:c sexp)
   (cond ((or (c.scm:var? sexp)
              (c.scm:self-eval? sexp))
