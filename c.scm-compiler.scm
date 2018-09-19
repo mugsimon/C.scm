@@ -1790,17 +1790,6 @@ rest ;; (not (null? vl))が偽ならnull, 真なら記号vlの情報を格納し
          (c.scm:compile-expr sexp))) ;; (fun ...)
       (c.scm:compile-expr sexp))) ;; atom
 
-#;(define (c.scm:compile-sexp sexp)
-  (match sexp
-         (`(define (,x . ,params) . ,body)
-          (c.scm:compile-function x params body))
-         (`(define ,x (lambda ,params . ,body))          
-          (c.scm:compile-function x params body))
-         (`(define ,x ,exp)
-          `(define ,x ,(c.scm:compile-expr exp)))
-         (else
-          (print "c.scm:compile, Unknown S expression: " sexp))))
-
 (define (c.scm:compile-expr form)
   (dlet ((*env* '()))
         (c.scm:c2expr
@@ -1831,14 +1820,6 @@ rest ;; (not (null? vl))が偽ならnull, 真なら記号vlの情報を格納し
             x
             `(lambda ,(car form) ,(c.scm:c2expr (c.scm:h (c.scm:c (cadr x)))))))))
             
-#;(define (c.scm:compile-function name params body)
-  (let ((x (dlet ((*env* '()))
-                 (c1lam (cons params body)))))
-    (if c.scm:*debug-mode*
-        `(define ,name ,x)
-        `(define ,name (lambda ,(map var-name (car x))
-                         ,(c.scm:c2expr (cadr x)))))))
-
 (define (c.scm:c2expr form)
   (cond ((c.scm:symbol? form)
          (c.scm:c2vref form))
@@ -1925,23 +1906,6 @@ rest ;; (not (null? vl))が偽ならnull, 真なら記号vlの情報を格納し
            (loop (cdr defs)
                  (cons (c.scm:c2def (car defs)) cdefs))))))             
                  
-#;(define (c.scm:c2letrec x)
-  (let loop ((defs (car x))
-             (cdefs '()))
-    (cond ((null? defs)
-           (if (null? cdefs)
-               (c.scm:c2expr (cadr x))
-               `(letrec ,(reverse cdefs) ,(c.scm:c2expr (cadr x)))))
-          (else
-           (let ((var (caar defs)))
-             (if (var-local-fun var)
-                 (begin
-                   (set! c.scm:*codes* (cons `(define ,@(c.scm:c2def (car defs))) c.scm:*codes*))
-                   (loop (cdr defs)
-                         cdefs))
-                 (loop (cdr defs)
-                       (cons (c.scm:c2def (car defs)) cdefs))))))))
-
 (define (c.scm:c2def def)
   (list (var-name (car def)) (c.scm:c2expr (cadr def))))
 
