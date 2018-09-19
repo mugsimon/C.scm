@@ -1744,9 +1744,10 @@ rest ;; (not (null? vl))が偽ならnull, 真なら記号vlの情報を格納し
       (string? x)))
 
 (define (c.scm:compile input)
-  (if (string? input)
-      (c.scm:compile-file input)
-      (c.scm:compile-sexp input)))
+  (cond ((string? input)
+         (c.scm:compile-file input))
+        (else
+         (c.scm:compile-sexp input))))
 
 (define (c.scm:compile-file input))
 
@@ -1790,8 +1791,6 @@ rest ;; (not (null? vl))が偽ならnull, 真なら記号vlの情報を格納し
 
 (define c.scm:*local-functions* '())
 (define c.scm:*debug-mode* #t)
-(define (c.scm:init)
-  (set! c.scm:*codes* '()))
 
 (define (c.scm:debug . x)
   (cond ((null? x)
