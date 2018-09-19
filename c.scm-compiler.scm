@@ -1914,6 +1914,7 @@ rest ;; (not (null? vl))が偽ならnull, 真なら記号vlの情報を格納し
 ;;; closure conversion ;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;  
 ;; f
+;; free variables
 (define (c.scm:f sexp)
   (cond ((c.scm:var? sexp)
          (list sexp))
@@ -2017,29 +2018,53 @@ rest ;; (not (null? vl))が偽ならnull, 真なら記号vlの情報を格納し
          (cons (car x) (c.scm:difference (cdr x) y)))))
 
 ;; c
+;; closing
+;; lambda式のパラメタに自由変数を追加
+;; 関数呼び出しのパラメタに自由変数を追加
 (define (c.scm:c sexp)
-  (cond ((c.scm:self-eval? sexp)
-         sexp)
-        ((c.scm:var? sexp)
+  (cond ((or (c.scm:var? sexp)
+             (c.scm:self-eval? sexp))
          sexp)
         (else
-         (match sexp
-                (`(define ,name ,value)
-                 `(define ,name ,(c.scm:c value)))
-                (`(let ,defs ,body)
-                 (c.scm:c-let defs body))
-                (`(if ,e1 ,e2 ,e3)
-                 (c.scm:c-if e1 e2 e3))
-                (`(lambda ,params ,body)
-                 (c.scm:c-lambda params body))
-                (else
-                 (print "c.scm:c else"))))))
+         (let ((fun (car sexp))
+               (args (cdr sexp)))
+           (case fun
+             ((if) (c.scm:c-if args))
+             ((and) (c.scm:c-and args))
+             ((or) (c.scm:c-or args))
+             ((begin) (c.scm:c-begin args))
+             ((lambda) (c.scm:c-lambda args))
+             ((delay) (c.scm:c-delay args))
+             ((let) (c.scm:c-let args))
+             ((let*) (c.scm:c-let args))
+             ((letrec) (c.scm:c-letrec args))
+             ((set!) (c.scm:c-set! args))
+             ((quote) (c.scm:c-quote args))
+             (else
+              (c.scm:c-symbol-fun fun args)))))))
 
-(define (c.scm:c-let defs body)
-  (let loop ((defs defs)
+(define (c.scm:c-if args)
+  `(if (c.scm:c (car args))
+       (c.scm:c (cadr args))
+       (c.scm:c (caddr args))))
+
+(define (c.scm:c-and args)
+  `(and ,@(map c.scm:c args)))
+
+(define (c.scm:c-or args)
+  `(or ,@(map c.scm:c args)))
+
+(define (c.scm:c-begin args)
+  `(or ,@(map c.scm:c args)))
+
+(define (c.scm:c-lambda args)
+  `(lambda (,@(c.scm:f-lambda args) ,@(car args)) ,(c.scm:c (cadr args))))
+
+(define (c.scm:c-let args)
+  (let loop ((defs (car args))
              (cdefs '()))
     (cond ((null? defs)
-           `(let ,(reverse cdefs) ,(c.scm:c body)))
+           `(let ,(reverse cdefs) ,(c.scm:c (cadr args))))
           (else
            (let ((def (car defs)))
              (loop (cdr defs)
@@ -2047,40 +2072,28 @@ rest ;; (not (null? vl))が偽ならnull, 真なら記号vlの情報を格納し
                                (c.scm:c (cdr def)))
                          cdefs)))))))
 
-(define (c.scm:c-if e1 e2 e3)
-  `(if ,(c.scm:c e1)
-       ,(c.scm:c e2)
-       ,(c.scm:c e3)))
+(define (c.scm:c-letrec args)
+  (let loop ((defs (car args))
+             (cdefs '()))
+    (cond ((null? defs)
+           `(letrec ,(reverse cdefs) ,(c.scm:c (cadr args))))
+          (else
+           (let ((def (car defs)))
+             (loop (cdr defs)
+                   (cons (list (car def)
+                               (c.scm:c (cdr def)))
+                         cdefs)))))))
 
-(define (c.scm:c-lambda params body)
-  `(lambda (,@(c.scm:f-lambda params body) ,@params) ,body))
+(define (c.scm:c-set! args)
+  `(set! ,(car args) ,(c.scm:c (cadr args))))
 
-(define (c.scm:c-function form)
-  `(,(car form) ,@(c.scm:f (var-local-fun-args (car form))) ,@(map c.scm:c (cdr form))))
+(define (c.scm:c-quote args)
+  `(quote ,(car args)))
 
-(define (c.scm:c-primitive form)
-  `(,(car form) ,@(map c.scm:c (cdr form))))
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+(define (c.scm:c-symbol-fun fun args)
+  (if (c.scm:var? fun)
+      `(,fun ,@(c.scm:f (var-local-fun-args fun)) ,@(map c.scm:c args))
+      `(,fun ,@(map c.scm:c args))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
