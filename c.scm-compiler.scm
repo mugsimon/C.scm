@@ -2135,8 +2135,10 @@ rest ;; (not (null? vl))が偽ならnull, 真なら記号vlの情報を格納し
 
 (define (c.scm:c-symbol-fun fun args)
   (if (c.scm:var? fun)
-      `(,fun ,@c.scm:*c-free-vars* ,@(map c.scm:c args))
-      `(,fun ,@(map c.scm:c args))))
+      (if (var-local-fun fun)
+          `(,fun ,@c.scm:*c-free-vars* ,@(map c.scm:c args)) ;; ローカル関数の呼び出し
+          `(,fun ,@(map c.scm:c args))) ;; クロージャーの呼び出し
+      `(,fun ,@(map c.scm:c args)))) ;; グローバル関数の呼び出し
 
 #;(define (c.scm:c-symbol-fun fun args)
   (if (c.scm:var? fun)
