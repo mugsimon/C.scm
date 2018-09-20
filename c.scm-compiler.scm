@@ -1945,6 +1945,7 @@ rest ;; (not (null? vl))が偽ならnull, 真なら記号vlの情報を格納し
 ;; f
 ;; free variables
 (define (c.scm:f sexp)
+  (print "c.scm:debug, c.scm:f, sexp-> " sexp) ;; debug
   (cond ((c.scm:var? sexp)
          (list sexp))
         ((or (symbol? sexp)
@@ -1969,6 +1970,7 @@ rest ;; (not (null? vl))が偽ならnull, 真なら記号vlの情報を格納し
                      (c.scm:f-symbol-fun fun args)))))))
 
 (define (c.scm:f-if args)
+  (print "c.scm:debug, c.scm:f-if, args-> " args) ;; debug
   (c.scm:union (c.scm:union (c.scm:f (car args))
                             (c.scm:f (cadr args)))
                (c.scm:f (caddr args))))
@@ -1986,6 +1988,9 @@ rest ;; (not (null? vl))が偽ならnull, 真なら記号vlの情報を格納し
                (c.scm:f-begin (cdr args))))
 
 (define (c.scm:f-lambda args)
+  (print "c.scm:debug, c.scm:f-lambda, args-> " args) ;; debug
+  (print "c.scm:debug, c.scm:f-lambda, (car args)-> " (car args)) ;; debug
+  (print "c.scm:debug, c.scm:f-lambda, (cadr args)-> " (cadr args)) ;; debug
   (c.scm:difference (c.scm:f (cadr args))
                     (car args)))
 
@@ -2021,6 +2026,8 @@ rest ;; (not (null? vl))が偽ならnull, 真なら記号vlの情報を格納し
   '())
 
 (define (c.scm:f-symbol-fun fun args)
+  (print "c.scm:debug, c.scm:f-symbol-fun, fun-> " fun) ;; debug
+  (print "c.scm:debug, c.scm:f-symbol-fun, args-> " args) ;; debug
   (if (null? args)
       (c.scm:f fun)
       (let loop ((args args))
