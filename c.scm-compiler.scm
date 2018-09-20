@@ -1821,7 +1821,7 @@ rest ;; (not (null? vl))が偽ならnull, 真なら記号vlの情報を格納し
                      (c1lam form))))
         (if c.scm:*debug-mode*
             x
-            `(lambda ,(car form) ,(c.scm:c2expr (c.scm:h (c.scm:c-lambda x))))))))
+            (c.scm:c2expr (c.scm:h (c.scm:c-lambda x)))))))
             
 (define (c.scm:c2expr form)
   (cond ((c.scm:symbol? form)
@@ -1937,7 +1937,7 @@ rest ;; (not (null? vl))が偽ならnull, 真なら記号vlの情報を格納し
 
 (define (c.scm:var? var)
   (match var
-         (`(,name ,(or #f #t) ,(or #f #t) ,(or #f #t) ,(or #f #t) ,local-fun-args ,loc)
+         (`(,name ,(or #f #t) ,(or #f #t) ,(or #f #t) ,local-fun ,local-fun-args ,loc)
           #t)
          (else
           #f)))
@@ -1948,7 +1948,6 @@ rest ;; (not (null? vl))が偽ならnull, 真なら記号vlの情報を格納し
 ;; f
 ;; free variables
 (define (c.scm:f sexp)
-  (print "c.scm:debug, c.scm:f, sexp-> " sexp) ;; debug
   (cond ((c.scm:var? sexp)
          (list sexp))
         ((or (symbol? sexp)
@@ -1973,7 +1972,6 @@ rest ;; (not (null? vl))が偽ならnull, 真なら記号vlの情報を格納し
                      (c.scm:f-symbol-fun fun args)))))))
 
 (define (c.scm:f-if args)
-  (print "c.scm:debug, c.scm:f-if, args-> " args) ;; debug
   (c.scm:union (c.scm:union (c.scm:f (car args))
                             (c.scm:f (cadr args)))
                (c.scm:f (caddr args))))
@@ -1991,9 +1989,6 @@ rest ;; (not (null? vl))が偽ならnull, 真なら記号vlの情報を格納し
                (c.scm:f-begin (cdr args))))
 
 (define (c.scm:f-lambda args)
-  (print "c.scm:debug, c.scm:f-lambda, args-> " args) ;; debug
-  (print "c.scm:debug, c.scm:f-lambda, (car args)-> " (car args)) ;; debug
-  (print "c.scm:debug, c.scm:f-lambda, (cadr args)-> " (cadr args)) ;; debug
   (c.scm:difference (c.scm:f (cadr args))
                     (car args)))
 
@@ -2029,8 +2024,6 @@ rest ;; (not (null? vl))が偽ならnull, 真なら記号vlの情報を格納し
   '())
 
 (define (c.scm:f-symbol-fun fun args)
-  (print "c.scm:debug, c.scm:f-symbol-fun, fun-> " fun) ;; debug
-  (print "c.scm:debug, c.scm:f-symbol-fun, args-> " args) ;; debug
   (if (null? args)
       (c.scm:f fun)
       (let loop ((args args))
@@ -2095,14 +2088,11 @@ rest ;; (not (null? vl))が偽ならnull, 真なら記号vlの情報を格納し
   `(or ,@(map c.scm:c args)))
 
 (define (c.scm:c-begin args)
-  `(begin ,@(map c.scm:c args)))
+  `(begin ,@(map c.scm:c args)))  
 
 (define (c.scm:c-lambda args)
   (dlet ((c.scm:*c-free-vars* (c.scm:union c.scm:*c-free-vars* (car args))))
         `(lambda ,c.scm:*c-free-vars* ,(c.scm:c (cadr args)))))
-
-#;(define (c.scm:c-lambda args)
-  `(lambda (,@(c.scm:f-lambda args) ,@(car args)) ,(c.scm:c (cadr args))))
 
 (define (c.scm:c-let args)
   (let loop ((defs (car args))
@@ -2139,14 +2129,9 @@ rest ;; (not (null? vl))が偽ならnull, 真なら記号vlの情報を格納し
 (define (c.scm:c-symbol-fun fun args)
   (if (c.scm:var? fun)
       (if (var-local-fun fun)
-          `(,fun ,@c.scm:*c-free-vars* ,@(map c.scm:c args)) ;; ローカル関数の呼び出し
+          `(,fun ,@(var-local-fun fun) ,@(map c.scm:c args)) ;; ローカル関数の呼び出し
           `(,fun ,@(map c.scm:c args))) ;; クロージャーの呼び出し
       `(,fun ,@(map c.scm:c args)))) ;; グローバル関数の呼び出し
-
-#;(define (c.scm:c-symbol-fun fun args)
-  (if (c.scm:var? fun)
-      `(,fun ,@(c.scm:f (var-local-fun-args fun)) ,@(map c.scm:c args))
-`(,fun ,@(map c.scm:c args))))
 
 ;; h
 ;; 入力:入れ子の関数を含む可能性がある項
