@@ -1185,7 +1185,7 @@ rest ;; (not (null? vl))が偽ならnull, 真なら記号vlの情報を格納し
                             (set-car! (cdr def) (c1lambda (cdr form))) ;; lambda式の解析結果 (var ここに格納 (lambda (...) ...))
                             (begin (set-car! (cdr def) `(lambda ,@(c1lam (cdr form)))) ;; c.scm
                                    #;(set-car! (cdr def) (c1lam (cdr form))) ;; lambda式の解析結果 (var ここに格納 (lambda (...) ...))
-                                   (set-var-local-fun var c.scm:free-vars) ;; c.scm #tの代わりに自由変数のリストをおく
+                                   (set-var-local-fun var (reverse (c.scm:difference c.scm:free-vars (cadadr def)))) ;; c.scm #tの代わりに自由変数のリストをおく
                                    #;(set-var-local-fun var #t) ;; 局所関数, letrecで定義されるから
                                    (set-var-local-fun-args var (cadr def)))) ;; lambda式の解析結果を変数情報に格納
                         (set-car! (cdr def) (c1expr form))))) ;; 初期値の解析結果を格納
