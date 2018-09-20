@@ -1818,7 +1818,7 @@ rest ;; (not (null? vl))が偽ならnull, 真なら記号vlの情報を格納し
                      (c1lam form))))
         (if c.scm:*debug-mode*
             x
-            `(lambda ,(car form) ,(c.scm:c2expr (c.scm:h (c.scm:c (cadr x)))))))))
+            `(lambda ,(car form) ,(c.scm:c2expr (c.scm:h (c.scm:c-lambda x))))))))
             
 (define (c.scm:c2expr form)
   (cond ((c.scm:symbol? form)
@@ -2057,6 +2057,7 @@ rest ;; (not (null? vl))が偽ならnull, 真なら記号vlの情報を格納し
 ;; closing
 ;; lambda式のパラメタに自由変数を追加
 ;; 関数呼び出しのパラメタに自由変数を追加
+(define c.scm:*c-free-vars* '())
 (define (c.scm:c sexp)
   (cond ((or (c.scm:var? sexp)
              (c.scm:self-eval? sexp))
@@ -2094,6 +2095,10 @@ rest ;; (not (null? vl))が偽ならnull, 真なら記号vlの情報を格納し
   `(begin ,@(map c.scm:c args)))
 
 (define (c.scm:c-lambda args)
+  (dlet ((c.scm:*c-free-vars* (c.scm:union c.scm:*c-free-vars* (car args))))
+        `(lambda ,c.scm:*c-free-vars* ,(c.scm:c (cadr args)))))
+
+#;(define (c.scm:c-lambda args)
   `(lambda (,@(c.scm:f-lambda args) ,@(car args)) ,(c.scm:c (cadr args))))
 
 (define (c.scm:c-let args)
@@ -2127,6 +2132,11 @@ rest ;; (not (null? vl))が偽ならnull, 真なら記号vlの情報を格納し
   `(quote ,(car args)))
 
 (define (c.scm:c-symbol-fun fun args)
+  (if (c.scm:var? fun)
+      `(,fun ,@c.scm:*c-free-vars* ,@(map c.scm:c args))
+      `(,fun ,@(map c.scm:c args))))
+
+#;(define (c.scm:c-symbol-fun fun args)
   (if (c.scm:var? fun)
       `(,fun ,@(c.scm:f (var-local-fun-args fun)) ,@(map c.scm:c args))
       `(,fun ,@(map c.scm:c args))))
