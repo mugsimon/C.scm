@@ -1178,16 +1178,19 @@ rest ;; (not (null? vl))が偽ならnull, 真なら記号vlの情報を格納し
           ;; letrec式で束縛されるローカル変数の各初期値を上で拡張済みの環境*env*で初期値を解析
           (dolist (def defs) ;; def -> (var '() (lambda (...) ...))
                   (let ((var (car def)) ;; var
-                        (form (caddr def))) ;; (lambda (...) ...)
+                        (form (caddr def)) ;; (lambda (...) ...)
+                        (c.scm:free-vars (c.scm:difference *env* (map car defs)))) ;; c.scm この時点での自由変数
                     (if (and (pair? form) (eq? (car form) 'lambda #;'LAMBDA)) ;; 初期値がlambda式, r7rsでは不等価
                         (if (or (var-funarg var) (var-assigned var) (var-closed var)) 
                             (set-car! (cdr def) (c1lambda (cdr form))) ;; lambda式の解析結果 (var ここに格納 (lambda (...) ...))
                             (begin (set-car! (cdr def) `(lambda ,@(c1lam (cdr form)))) ;; c.scm
                                    #;(set-car! (cdr def) (c1lam (cdr form))) ;; lambda式の解析結果 (var ここに格納 (lambda (...) ...))
-                                   (set-var-local-fun var #t) ;; 局所関数, letrecで定義されるから
+                                   (set-var-local-fun var c.scm:free-vars) ;; c.scm #tの代わりに自由変数のリストをおく
+                                   #;(set-var-local-fun var #t) ;; 局所関数, letrecで定義されるから
                                    (set-var-local-fun-args var (cadr def)))) ;; lambda式の解析結果を変数情報に格納
                         (set-car! (cdr def) (c1expr form))))) ;; 初期値の解析結果を格納
           (c1letrec-aux defs))
+    
     ;; c.scm: defsからlambda式を取り除く
     (let loop ((defs defs))
       (if (null? defs)
