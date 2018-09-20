@@ -2121,8 +2121,10 @@ rest ;; (not (null? vl))が偽ならnull, 真なら記号vlの情報を格納し
           (else
            (let ((def (car defs)))
              (loop (cdr defs)
-                   (cons (list (car def)
-                               (c.scm:c (cadr def)))
+                   (cons (if (var-local-fun (car def))
+                             (list (car def)
+                                   (c.scm:c (cadr def)))
+                             def)
                          cdefs)))))))
 
 (define (c.scm:c-set! args)
@@ -2139,7 +2141,7 @@ rest ;; (not (null? vl))が偽ならnull, 真なら記号vlの情報を格納し
 #;(define (c.scm:c-symbol-fun fun args)
   (if (c.scm:var? fun)
       `(,fun ,@(c.scm:f (var-local-fun-args fun)) ,@(map c.scm:c args))
-      `(,fun ,@(map c.scm:c args))))
+`(,fun ,@(map c.scm:c args))))
 
 ;; h
 ;; 入力:入れ子の関数を含む可能性がある項
