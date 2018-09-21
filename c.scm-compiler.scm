@@ -1844,7 +1844,9 @@ form))
                     ((set!) (c.scm:c2set! args))
                     ((quote) (c.scm:c2quote args))
                     (else
-                     (c.scm:c2symbol-fun fun args)))))))
+                     (c.scm:c2symbol-fun fun args))))
+                 (else
+                  `(,(c.scm:c2expr fun) ,@(c.scm:c2args args))))))
         (else
          (case form
            ((#f) #f)
@@ -1875,9 +1877,12 @@ form))
   `(begin ,@(c1map c.scm:c2expr args)))
 
 (define (c.scm:c2lambda form)
-  (let ((params (if (c.scm:pair? (car form))
-                    (map var-name (car form))
-                    (var-name (car form))))
+  (let ((params (cond ((null? (car form))
+                       (car form))
+                      ((c.scm:pair? (car form))
+                       (map var-name (car form)))
+                      (else
+                       (var-name (car form)))))
         (body (c.scm:c2expr (cadr form))))
     `(lambda ,params ,body)))
 
@@ -2240,3 +2245,5 @@ form))
        (string-append *function-name* (number->string *newvar*)))	 
       (string->symbol
        (string-append (car name) (number->string *newvar*)))))
+
+(define (c.scm:expr-lst input) (let ((iport (open-input-file input))) (let loop ((expr (read iport)) (lst '())) (cond ((eof-object? expr) (close-input-port iport) lst) (else (loop (read iport) (cons expr lst)))))))
