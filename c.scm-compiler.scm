@@ -2091,6 +2091,9 @@ rest ;; (not (null? vl))が偽ならnull, 真なら記号vlの情報を格納し
   `(begin ,@(map c.scm:c args)))  
 
 (define (c.scm:c-lambda args)
+  `(lambda ,(c.scm:union c.scm:*c-free-vars* (car args)) ,(c.scm:c (cadr args))))
+
+#;(define (c.scm:c-lambda args)
   (dlet ((c.scm:*c-free-vars* (c.scm:union c.scm:*c-free-vars* (car args))))
         `(lambda ,c.scm:*c-free-vars* ,(c.scm:c (cadr args)))))
 
@@ -2115,8 +2118,9 @@ rest ;; (not (null? vl))が偽ならnull, 真なら記号vlの情報を格納し
            (let ((def (car defs)))
              (loop (cdr defs)
                    (cons (if (var-local-fun (car def))
-                             (list (car def)
-                                   (c.scm:c (cadr def)))
+                             (begin (set! c.scm:*c-free-vars* (var-local-fun (car def)))
+                                    (list (car def)
+                                          (c.scm:c (cadr def))))
                              def)
                          cdefs)))))))
 
