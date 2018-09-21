@@ -2060,7 +2060,35 @@ form))
 ;; lambda式のパラメタに自由変数を追加
 ;; 関数呼び出しのパラメタに自由変数を追加
 (define c.scm:*c-free-vars* '())
-(define (c.scm:c sexp)
+(define (c.scm:c form)
+  (cond ((c.scm:pair? form)
+         (let ((fun (car form))
+               (args (cdr form)))
+           (cond ((c.scm:symbol? fun)
+                  (case fun
+                    ((if) (c.scm:c-if args))
+                    ((and) (c.scm:c-and args))
+                    ((or) (c.scm:c-or args))
+                    ((begin) (c.scm:c-begin args))
+                    ((lambda) (c.scm:c-lambda args))
+                    ((delay) (c.scm:c-delay args))
+                    ((let) (c.scm:c-let args))
+                    ((let*) (c.scm:c-let args))
+                    ((letrec) (c.scm:c-letrec args))
+                    ((set!) (c.scm:c-set! args))
+                    ((quote) (c.scm:c-quote args))
+                    (else
+                     (c.scm:c-symbol-fun fun args))))
+                 (else
+                  `(,(c.scm:c fun) ,@(c.scm:c-args args))))))
+        (else
+         (case form
+           ((#f) #f)
+           ((#t) #t)
+           ((()) '())
+           (else
+            form)))))
+#;(define (c.scm:c sexp)
   (cond ((or (c.scm:var? sexp)
              (c.scm:self-eval? sexp)
              (symbol? sexp))
@@ -2140,9 +2168,23 @@ form))
 (define (c.scm:c-symbol-fun fun args)
   (if (c.scm:var? fun)
       (if (var-local-fun fun)
+          `(,fun ,@(var-local-fun fun) ,@(c.scm:c-args args)) ;; ローカル関数の呼び出し
+          `(,fun ,@(c.scm:c-args args))) ;; クロージャーの呼び出し
+      `(,fun ,@(c.scm:c-args args))))
+
+#;(define (c.scm:c-symbol-fun fun args)
+  (if (c.scm:var? fun)
+      (if (var-local-fun fun)
           `(,fun ,@(var-local-fun fun) ,@(map c.scm:c args)) ;; ローカル関数の呼び出し
           `(,fun ,@(map c.scm:c args))) ;; クロージャーの呼び出し
       `(,fun ,@(map c.scm:c args)))) ;; グローバル関数の呼び出し
+
+(define (c.scm:c-args args)
+  (if (null? args)
+      '()
+      (cons (c.scm:c (car args))
+            (c.scm:c-args (cdr args)))))
+                     
 
 ;; h
 ;; 入力:入れ子の関数を含む可能性がある項
