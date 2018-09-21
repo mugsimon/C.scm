@@ -2189,7 +2189,35 @@ form))
 ;; h
 ;; 入力:入れ子の関数を含む可能性がある項
 ;; 出力:入れ子の関数を含まない項、新しい定義のリスト
-(define (c.scm:h sexp)
+(define (c.scm:h form)
+  (cond ((c.scm:pair? form)
+         (let ((fun (car form))
+               (args (cdr form)))
+           (cond ((c.scm:symbol? fun)
+                  (case fun
+                    ((if) (c.scm:h-if args))
+                    ((and) (c.scm:h-and args))
+                    ((or) (c.scm:h-or args))
+                    ((begin) (c.scm:h-begin args))
+                    ((lambda) (c.scm:h-lambda args))
+                    ((delay) (c.scm:h-delay args))
+                    ((let) (c.scm:h-let args))
+                    ((let*) (c.scm:h-let args))
+                    ((letrec) (c.scm:h-letrec args))
+                    ((set!) (c.scm:h-set! args))
+                    ((quote) (c.scm:h-quote args))
+                    (else
+                     (c.scm:h-symbol-fun fun args))))
+                 (else
+                  `(,(c.scm:h fun) ,@(c.scm:h-args args))))))
+        (else
+         (case form
+           ((#f) #f)
+           ((#t) #t)
+           ((()) '())
+           (else
+            form)))))
+#;(define (c.scm:h sexp)
   (cond ((c.scm:var? sexp)
          sexp)
         ((or (symbol? sexp)
@@ -2273,7 +2301,14 @@ form))
   `(quote ,(car args)))
 
 (define (c.scm:h-symbol-fun fun args)
-  `(,fun ,@(map c.scm:h args)))               
+  `(,fun ,@(c.scm:h-args args)))
+
+(define (c.scm:h-args args)
+  (if (null? args)
+      '()
+      (cons (c.scm:h (car args))
+            (c.scm:h-args (cdr args)))))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
