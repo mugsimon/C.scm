@@ -2056,9 +2056,10 @@ rest ;; (not (null? vl))が偽ならnull, 真なら記号vlの情報を格納し
 (define c.scm:*c-free-vars* '())
 (define (c.scm:c sexp)
   (cond ((or (c.scm:var? sexp)
-             (c.scm:self-eval? sexp))
+             (c.scm:self-eval? sexp)
+             (symbol? sexp))
          sexp)
-        (else
+        ((c.scm:pair? sexp)
          (let ((fun (car sexp))
                (args (cdr sexp)))
            (case fun
