@@ -2206,8 +2206,11 @@ rest ;; (not (null? vl))が偽ならnull, 真なら記号vlの情報を格納し
                        (cons (list (car def)
                                    (c.scm:h (cadr def)))
                              cdefs))))))))
-  
+
 (define (c.scm:h-local-fun def)
+  (set! c.scm:*local-functions* (cons (list (car def) (c.scm:h (cadr def))) c.scm:*local-functions*))
+  #;(print "c.scm:debug, c.scm:h-local-fun, c.scm:*local-functions*-> " c.scm:*local-functions*)) ;; debug
+#;(define (c.scm:h-local-fun def)
   (set! c.scm:*local-functions* (cons def c.scm:*local-functions*)))
 
 (define (c.scm:h-set! args)
