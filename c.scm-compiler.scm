@@ -903,20 +903,20 @@ form))
 #;(define (c1lam lambda-expr)
 (if (end? lambda-expr) (scbad-args 'lambda lambda-expr)) 
 (let ((requireds '()) ;; 情報変数のリスト
-(rest '())) ;; 任意引数の場合はその記号の情報変数となる
-(dlet ((*env* *env*))
-(do ((vl (car lambda-expr) (cdr vl))) ;; vlはlambdaの仮引数のリスト
-((not (pair? vl)) ;; vlがnullまたは記号単体
-(if (not (null? vl)) ;; 記号単体
-(let ((var (make-var vl)))
-(set! *env* (cons var *env*)) ;; *env*に作成したリストを追加する
-(set! rest var))) ;; restはvlが記号のリストではなかった場合のみ記号vlの情報を格納したリストに書き換わる
-(list (reverse requireds) 
-rest ;; (not (null? vl))が偽ならnull, 真なら記号vlの情報を格納したリスト
-(c1body (cdr lambda-expr) '()))) ;; lambda式の本体部分を解析
-(let ((var (make-var (car vl))))
-(set! requireds (cons var requireds)) ;; 作成した情報変数をrequiredsに追加する
-(set! *env* (cons var *env*))))))) ;; 作成した情報変数を*env*に追加する
+      (rest '())) ;; 任意引数の場合はその記号の情報変数となる
+  (dlet ((*env* *env*))
+        (do ((vl (car lambda-expr) (cdr vl))) ;; vlはlambdaの仮引数のリスト
+            ((not (pair? vl)) ;; vlがnullまたは記号単体
+             (if (not (null? vl)) ;; 記号単体
+                 (let ((var (make-var vl)))
+                   (set! *env* (cons var *env*)) ;; *env*に作成したリストを追加する
+                   (set! rest var))) ;; restはvlが記号のリストではなかった場合のみ記号vlの情報を格納したリストに書き換わる
+             (list (reverse requireds) 
+                   rest ;; (not (null? vl))が偽ならnull, 真なら記号vlの情報を格納したリスト
+                   (c1body (cdr lambda-expr) '()))) ;; lambda式の本体部分を解析
+          (let ((var (make-var (car vl))))
+            (set! requireds (cons var requireds)) ;; 作成した情報変数をrequiredsに追加する
+            (set! *env* (cons var *env*))))))) ;; 作成した情報変数を*env*に追加する
 
 (define (c1lam lambda-expr)
   (if (end? lambda-expr) (scbad-args 'lambda lambda-expr)) 
@@ -1816,7 +1816,8 @@ rest ;; (not (null? vl))が偽ならnull, 真なら記号vlの情報を格納し
 
 (define (c.scm:compile-function form)
   (if (or (symbol? (car form))
-          (pair? (car form)))
+          (pair? (car form))
+          (null? (car form)))
       (let ((x (dlet ((*env* '()))
                      (c1lam form))))
         (if c.scm:*debug-mode*
