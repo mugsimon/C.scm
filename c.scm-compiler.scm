@@ -2118,9 +2118,9 @@ rest ;; (not (null? vl))が偽ならnull, 真なら記号vlの情報を格納し
            (let ((def (car defs)))
              (loop (cdr defs)
                    (cons (if (var-local-fun (car def))
-                             (begin (set! c.scm:*c-free-vars* (var-local-fun (car def)))
-                                    (list (car def)
-                                          (c.scm:c (cadr def))))
+                             (dlet ((c.scm:*c-free-vars* (var-local-fun (car def))))
+                                   (list (car def)
+                                         (c.scm:c (cadr def))))
                              def)
                          cdefs)))))))
 
