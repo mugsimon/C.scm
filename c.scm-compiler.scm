@@ -2236,7 +2236,7 @@ form))
                              cdefs))))))))
 
 (define (c.scm:h-local-fun def)
-  (set! c.scm:*local-functions* (cons (list (car def) (c.scm:h (cadr def))) c.scm:*local-functions*))
+  (set! c.scm:*local-functions* (cons (list (car def) (c.scm:h (cadr def))) c.scm:*local-functions*)))
 
 (define (c.scm:h-set! args)
   `(set! ,(car args) ,(c.scm:h (cadr args))))
