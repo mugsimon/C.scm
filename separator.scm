@@ -206,9 +206,9 @@
 
 (define (c.scm:check exp)
   ;;(print "c.scm:debug: c.scm:check " exp) ;; debug
-  (and #;(c.scm:no-assignment? exp)
-       (c.scm:no-lambda? exp)
-       (c.scm:no-internal-define? exp)))
+  (and (c.scm:no-assignment? exp)
+       #;(c.scm:no-lambda? exp)
+       #;(c.scm:no-internal-define? exp)))
 
 (define (c.scm:no-assignment? exp)
   (cond ((null? exp)

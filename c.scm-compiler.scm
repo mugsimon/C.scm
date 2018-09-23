@@ -1823,7 +1823,72 @@ form))
         (if c.scm:*debug-mode*
             x
             (c.scm:c2expr (c.scm:h (c.scm:c-lambda x)))))))
-            
+
+;; 代入されるローカル変数があるかどうか調べる
+(define (c.scm:assigned? form)
+  (cond ((c.scm:var? form)
+         (var-assigned form))
+        ((symbol? form)
+         #f)
+        ((c.scm:pair? form)
+         (let ((fun (car form))
+               (args (cdr form)))
+           (cond ((c.scm:symbol? fun)
+                  (case fun
+                    ((if) (c.scm:a-if args))
+                    ((and) (c.scm:a-sequence args))
+                    ((or) (c.scm:a-sequence args))
+                    ((begin) (c.scm:a-sequence args))
+                    ((lambda) (c.scm:a-lambda args))
+                    ((delay) (c.scm:a-delay args))
+                    ((let) (c.scm:a-let args))
+                    ((let*) (c.scm:a-let args))
+                    ((letrec) (c.scm:a-let args))
+                    ((set!) (c.scm:a-set! args))
+                    ((quote) #f)
+                    (else
+                     (c.scm:a-symbol-fun fun args))))
+                 (else
+                  (or (c.scm:assigned? fun)
+                      (c.scm:a-sequence args))))))
+        (else
+         #f)))
+(define (c.scm:a-if args)
+  (or (c.scm:assigned? (car args))
+      (c.scm:assigned? (cadr args))
+      (c.scm:assigned? (caddr args))))
+
+(define (c.scm:a-sequence args)
+  (if (null? args)
+      #f
+      (or (c.scm:assigned? (car args))
+          (c.scm:a-sequence (cdr args)))))
+
+(define (c.scm:a-lambda args)
+  (c.scm:assigned? (cadr args)))
+
+(define (c.scm:a-let args)
+  (let ((exps (map cdr (car args))))
+    (or (let loop ((exps exps))
+          (cond ((null? exps)
+                 #f)
+                ((c.scm:assigned? (car exps))
+                 #t)
+                (else
+                 (loop (cdr exps)))))
+        (c.scm:assigned? (cadr args)))))
+
+(define (c.scm:a-set! args)
+  (if (c.scm:var? (car args))
+      #t
+      (c.scm:assigned? (cadr args))))
+
+(define (c.scm:a-symbol-fun fun args)
+  (or (c.scm:assigned? fun)
+      (c.scm:a-sequence args)))
+
+
+;; c1後のコードをSchemeコードに直す            
 (define (c.scm:c2expr form)
   (cond ((c.scm:symbol? form)
          (c.scm:c2vref form))
