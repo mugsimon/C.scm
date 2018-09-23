@@ -1918,6 +1918,9 @@ form))
 (define (c.scm:c2def def)
   (list (var-name (car def)) (c.scm:c2expr (cadr def))))
 
+(define (c.scm:c2set! args)
+  `(set! ,(c.scm:c2expr (car args)) ,(c.scm:c2expr (cadr args))))
+
 (define (c.scm:c2quote args)
   `(quote ,@args))
 
@@ -2323,4 +2326,13 @@ form))
       (string->symbol
        (string-append (car name) (number->string *newvar*)))))
 
-(define (c.scm:expr-lst input) (let ((iport (open-input-file input))) (let loop ((expr (read iport)) (lst '())) (cond ((eof-object? expr) (close-input-port iport) lst) (else (loop (read iport) (cons expr lst)))))))
+(define (c.scm:expr-lst input)
+  (let ((iport (open-input-file input)))
+    (let loop ((expr (read iport))
+               (lst '()))
+      (cond ((eof-object? expr)
+             (close-input-port iport)
+             lst)
+            (else
+             (loop (read iport)
+                   (cons expr lst)))))))
