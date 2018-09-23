@@ -2091,28 +2091,6 @@ form))
            ((()) '())
            (else
             form)))))
-#;(define (c.scm:c sexp)
-  (cond ((or (c.scm:var? sexp)
-             (c.scm:self-eval? sexp)
-             (symbol? sexp))
-         sexp)
-        ((c.scm:pair? sexp)
-         (let ((fun (car sexp))
-               (args (cdr sexp)))
-           (case fun
-             ((if) (c.scm:c-if args))
-             ((and) (c.scm:c-and args))
-             ((or) (c.scm:c-or args))
-             ((begin) (c.scm:c-begin args))
-             ((lambda) (c.scm:c-lambda args))
-             ((delay) (c.scm:c-delay args))
-             ((let) (c.scm:c-let args))
-             ((let*) (c.scm:c-let args))
-             ((letrec) (c.scm:c-letrec args))
-             ((set!) (c.scm:c-set! args))
-             ((quote) (c.scm:c-quote args))
-             (else
-              (c.scm:c-symbol-fun fun args)))))))
 
 (define (c.scm:c-if args)
   `(if ,(c.scm:c (car args))
@@ -2130,10 +2108,6 @@ form))
 
 (define (c.scm:c-lambda args)
   `(lambda ,(c.scm:union c.scm:*c-free-vars* (car args)) ,(c.scm:c (cadr args))))
-
-#;(define (c.scm:c-lambda args)
-  (dlet ((c.scm:*c-free-vars* (c.scm:union c.scm:*c-free-vars* (car args))))
-        `(lambda ,c.scm:*c-free-vars* ,(c.scm:c (cadr args)))))
 
 (define (c.scm:c-let args)
   (let loop ((defs (car args))
@@ -2175,13 +2149,6 @@ form))
           `(,fun ,@(c.scm:c-args args))) ;; クロージャーの呼び出し
       `(,fun ,@(c.scm:c-args args))))
 
-#;(define (c.scm:c-symbol-fun fun args)
-  (if (c.scm:var? fun)
-      (if (var-local-fun fun)
-          `(,fun ,@(var-local-fun fun) ,@(map c.scm:c args)) ;; ローカル関数の呼び出し
-          `(,fun ,@(map c.scm:c args))) ;; クロージャーの呼び出し
-      `(,fun ,@(map c.scm:c args)))) ;; グローバル関数の呼び出し
-
 (define (c.scm:c-args args)
   (if (null? args)
       '()
@@ -2220,29 +2187,6 @@ form))
            ((()) '())
            (else
             form)))))
-#;(define (c.scm:h sexp)
-  (cond ((c.scm:var? sexp)
-         sexp)
-        ((or (symbol? sexp)
-             (c.scm:self-eval? sexp))
-         sexp)
-        ((c.scm:pair? sexp)
-         (let ((fun (car sexp))
-               (args (cdr sexp)))
-           (case fun
-                    ((if) (c.scm:h-if args))
-                    ((and) (c.scm:h-and args))
-                    ((or) (c.scm:h-or args))
-                    ((begin) (c.scm:h-begin args))
-                    ((lambda) (c.scm:h-lambda args))
-                    ((delay) (c.scm:h-delay args))
-                    ((let) (c.scm:h-let args))
-                    ((let*) (c.scm:h-let args))
-                    ((letrec) (c.scm:h-letrec args))
-                    ((set!) (c.scm:h-set! args))
-                    ((quote) (c.scm:h-quote args))
-                    (else
-                     (c.scm:h-symbol-fun fun args)))))))
 
 (define (c.scm:h-if args)
   `(if ,(c.scm:h (car args))
@@ -2293,9 +2237,6 @@ form))
 
 (define (c.scm:h-local-fun def)
   (set! c.scm:*local-functions* (cons (list (car def) (c.scm:h (cadr def))) c.scm:*local-functions*))
-  #;(print "c.scm:debug, c.scm:h-local-fun, c.scm:*local-functions*-> " c.scm:*local-functions*)) ;; debug
-#;(define (c.scm:h-local-fun def)
-  (set! c.scm:*local-functions* (cons def c.scm:*local-functions*)))
 
 (define (c.scm:h-set! args)
   `(set! ,(car args) ,(c.scm:h (cadr args))))
