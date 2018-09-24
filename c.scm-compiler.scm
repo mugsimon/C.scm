@@ -508,7 +508,8 @@ form))
                        (eq? (car fun) 'lambda)) ;; ((lambda ...) args)
                   (c1lambda-fun (cdr fun) args)) ;; ((...) ...) ;; let式に書き換える
                  (else
-                  (list #;c2funcall (c1expr fun) (c1args args)))))) ;; どういうパターンか
+                  `(,(c1expr fun) ,@(c1args args)) ;; c.scm
+                  #;(list c2funcall (c1expr fun) (c1args args)))))) ;; どういうパターンか
         (else
          (case form
            ((#f) c1false)
