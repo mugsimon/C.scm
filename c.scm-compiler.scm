@@ -1824,7 +1824,7 @@ form))
             x
             (c.scm:c2expr (c.scm:h (c.scm:c-lambda x)))))))
 
-;; 代入されるローカル変数があるかどうか調べる
+;; c1後のコードに代入されるローカル変数があるかどうか調べる
 (define (c.scm:assigned? form)
   (cond ((c.scm:var? form)
          (var-assigned form))
