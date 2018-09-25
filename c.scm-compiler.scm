@@ -1888,6 +1888,21 @@ form))
   (or (c.scm:assigned? fun)
       (c.scm:a-sequence args)))
 
+;; 内部lambdaのうち、エクスポートされる生のlambdaがあるかどうかチェックする
+(define (c.scm:no-lambda? exp)
+  (cond ((null? exp)
+         #t)
+        ((and (c.scm:pair? exp)
+              (not (c.scm:var? (car exp))))
+         (cond ((eq? (car exp) 'lambda)
+                #f)
+               ((c.scm:pair? (car exp))
+                (and (c.scm:no-lambda? (car exp))
+                     (c.scm:no-lambda? (cdr exp))))
+               (else
+                (c.scm:no-lambda? (cdr exp)))))
+        (else
+         #t)))
 
 ;; c1後のコードをSchemeコードに直す            
 (define (c.scm:c2expr form)
