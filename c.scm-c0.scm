@@ -63,124 +63,30 @@
 (define (c.scm:c0compile-function first args body)
   (if (not (and (pair? args)
 		        (symbol? (car args))))
-      (error "Bad arg to DEFINE." args))
+      (scerror "~s is a bad arg to DEFINE." args))
   (let ((x (dlet ((*env* '()))
-                 (c1lam (cons (cdr args) body)))))
+                 (c0lam (cons (cdr args) body)))))
     `(,first ,(car args) (lambda ,@x))))
 
 ;; form->expr
 (define (c.scm:c0compile-expr form)
   (let ((x (dlet ((*env* '()))
-                 (c1expr form))))
+                 (c0expr form))))
     x))
 
+;; 自己評価的データなら#tを返す
+;; x->expr
+(define (c.scm:self-eval? x)
+  (or (boolean? x)
+      (number? x)
+      (char? x)
+      (string? x)))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(define *re-compile-level* 0)
-;;; SCTOPS  Compiler toplevel.
-
-(define *bc-code* '())
-(define *bc-codep* '())
-
-(define *local-funs* '())
-(define *cclosures* '())
-
-(define *inline-functions* #f)
-
-(define set-fun-data '())            ;;;;; By A243  Dec, 1992 ;;;;;
-
-;; compile, (compile-expr form)
-#;(define (compile-expr form)
-  (wt-begin) ;; *bc-code*, *bc-codep*を(())に初期化
-  (let ((x (dlet ((*env* '())) 
-		         (c1expr form)))) 
-    (dlet ((*local-funs* '())
-	       (*cclosures* '())
-           (*level* 0)
-	       (*sp* -1)
-	       (*bp* 0)
-	       (*last-label* 0)
-           (*cenv-length* 0)
-	       (*cenv-loc* '())
-	       (*clink* '())
-	       (*ccb-vs* 0)
-           (*value-to-go* 'BX)
-	       (*exit* 'XRETURN))
-	      (c2expr x) ;; (apply (car x) (cdr x))
-	      (do ()
-	          ((and (null? *cclosures*)
-		            (null? *local-funs*)))
-            (if (not (null? *cclosures*))
-		        (let ((y (car *cclosures*)))
-                  (set! *cclosures* (cdr *cclosures*))
-                  ;; for DOS
-                                        ;(apply c2cclosure y)
-                  ;; for UNIX
-                  (apply (car y) (cdr y))
-                  ;;
-                  ))
-            (if (not (null? *local-funs*))
-		        (let ((y (car *local-funs*)))
-                  (set! *local-funs* (cdr *local-funs*))
-                  (apply c2local-fun y))))))
-  (wt-end-expr))
-
-
-
-
-;; compile
-;; firstはdefineかmacro
-;; (define (x ...) ...)の場合, argsはxも含む(x ...)である
-#;(define (compile-function first args body)
-  (if (not (and (pair? args)
-		        (symbol? (car args))))
-      (scerror "~s is a bad arg to DEFINE." args))
-  (wt-begin) ;; *bc-code*, *bc-codep* <- (())
-  (let ((x (dlet ((*env* '()))
-		         (c1lam (cons (cdr args) body))))) ;; lambda式の引数と本体, ((...) ...)
-    (dlet ((*local-funs* '())
-           (*cclosures* '())
-           (*level* 0) (*sp* -1) (*bp* 0) (*last-label* 0))
-          (apply c2lam (next-label2) x)
-          (do ()
-              ((and (null? *cclosures*)
-                    (null? *local-funs*)))
-            (if (not (null? *cclosures*))
-                (let ((y (car *cclosures*)))
-                  (set! *cclosures* (cdr *cclosures*))
-                  ;; for DOS
-                                        ;(apply c2cclosure y) ; ; ; ;
-                  ;; for UNIX
-                  (apply (car y) (cdr y))
-                  ;;
-                  ))
-            (if (not (null? *local-funs*))
-                (let ((y (car *local-funs*)))
-                  (set! *local-funs* (cdr *local-funs*))
-                  (apply c2local-fun y)))))
-    )
-  (wt-end-function first (car args) args))
-
-
-
-
-
-
-;; マクロ定義があればマクロ展開したプログラムを返す
-;; macro-functionが何をやっているか確認する!!!
-#;(define (macroexpand form)
-(if (and (pair? form) (symbol? (car form)) (macro-function (car form)))
-    (macroexpand ((macro-function (car form)) form))
-    form))
-
 ;;; Intrinsic constants
-
-;; c1quote
-(define (c1constant x) #;(list c2constant x)
-  (if (or (boolean? x)
-          (number? x)
-          (char? x)
-          (string? x))
+(define (c1constant x)
+  #;(list c2constant x)
+  (if (c.scm:self-eval? x)
       x
       `(quote ,x)))
 
@@ -197,160 +103,54 @@
 (define c1begin-empty-default #;(list c2constant '())
   '())
 
-;;; SCBIND  Variable Binding.
-
-(define *sp* 0) ;; スタックポインタ
-(define *bp* 0)
-
-(define *clink* '())
-(define *ccb-vs* 0)
-(define *cenv-length* 0)
-(define *cenv-loc* '())
-(define *level* 0)
-
 ;;; SCCOND  Conditionals.
-;; c1expr, (c1if args)
 (define (c1if args) 
   (if (or (end? args) ;; testがない
           (end? (cdr args)) ;; thenがない
           (and (not (end? (cddr args))) ;; else節があり
                (not (end? (cdddr args))))) ;; 更に節がある
       (scbad-args 'if args)) ;; 引数エラー
-  (list #;c2if
-   'if
-   (c1fmla (car args)) ;; test
-   (c1expr (cadr args)) ;; then
-   (if (null? (cddr args))
-       c1if-else-default
-       (c1expr (caddr args))))) ;; else
+  (list 'if #;c2if
+        (c1fmla (car args))
+        (c1expr (cadr args))
+        (if (null? (cddr args))
+            c1if-else-default
+            (c1expr (caddr args)))))
 
-;; c1if, (c1fmla (car args)), test節
 (define (c1fmla fmla)
-  (if (pair? fmla) 
+  (if (pair? fmla)
       (case (car fmla)
-        ((#;AND and) (cond ;; (and ...)
-                      ((end? (cdr fmla)) c1true) ;; 引数がない 真
-                      ((end? (cddr fmla)) (c1fmla (cadr fmla))) ;; 引数が１つ 
-                      (else (cons #;'FMLA-AND 'and (c1map c1fmla (cdr fmla)))))) ;; 引数が２つ以上
-        ((#;OR or) (cond ;; (or ...)
-                    ((end? (cdr fmla)) c1false) ;; 引数がない 偽
-                    ((end? (cddr fmla)) (c1fmla (cadr fmla))) ;; 引数が１つ
-                    (else (cons #;'FMLA-OR 'or (c1map c1fmla (cdr fmla)))))) ;; 引数が２つ以上
-        ((#;NOT not) (cond ((c1lookup 'not) (c1expr fmla)) ;; (not ...)
-                           ((or (end? (cdr fmla)) (not (end? (cddr fmla)))) ;; 引数なし, 引数２つ以上
-                            (scbad-args 'not (cdr fmla))) ;; 引数エラー
-                           (else (list #;'FMLA-NOT 'not (c1fmla (cadr fmla))))))
-        (else (c1expr fmla))) 
-      (c1expr fmla))) 
+        ((and #;AND) (cond
+                 ((end? (cdr fmla)) c1true)
+                 ((end? (cddr fmla)) (c1fmla (cadr fmla)))
+                 (else (cons 'and #;'FMLA-AND (c1map c1fmla (cdr fmla))))))
+        ((or #;OR) (cond
+                ((end? (cdr fmla)) c1false)
+                ((end? (cddr fmla)) (c1fmla (cadr fmla)))
+                (else (cons 'or #;'FMLA-OR (c1map c1fmla (cdr fmla))))))
+        ((not #;NOT) (cond ((c1lookup 'not) (c1expr fmla))
+                     ((or (end? (cdr fmla)) (not (end? (cddr fmla))))
+                      (scbad-args 'not (cdr fmla)))
+                     (else (list 'not #;'FMLA-NOT (c1fmla (cadr fmla))))))
+        (else (c1expr fmla)))
+      (c1expr fmla)))
 
-(define (c2if fmla form1 form2)
-  (if (and (eq? (car form2) c2constant)
-           (eq? *value-to-go* 'TRASH)
-           (member *exit* '(NEXT ESCAPE)))
-      (let ((Tlabel (next-label))
-            (Flabel *exit-label*))
-        (dlet ((*exit* 'NEXT)
-               (*exit-label* Tlabel))
-              (CJF fmla Flabel))
-        (wt-label Tlabel)
-        (c2expr form1))
-      (let ((Tlabel (next-label))
-            (Flabel (next-label)))
-        (dlet ((*exit* 'NEXT)
-               (*exit-label* Tlabel))
-              (CJF fmla Flabel))
-        (wt-label Tlabel)
-        (case *exit*
-          ((NEXT) (dlet ((*exit* 'ESCAPE))
-                        (c2expr form1)))
-          ((UNWIND-NEXT) (dlet ((*exit* 'UNWIND-ESCAPE))
-                               (c2expr form1)))
-          (else (c2expr form1)))
-        (wt-label Flabel)
-        (c2expr form2))))
-
-(define (CJT fmla Tlabel)
-  (case (car fmla)
-    ((FMLA-AND) (do ((fs (cdr fmla) (cdr fs)))
-                    ((null? (cdr fs))
-                     (CJT (car fs) Tlabel))
-                  (let ((Flabel *exit-label*))
-                    (dlet ((*exit-label* (next-label)))
-                          (CJF (car fs) Flabel)
-                          (wt-label *exit-label*)))))
-    ((FMLA-OR) (do ((fs (cdr fmla) (cdr fs)))
-                   ((null? (cdr fs))
-                    (CJT (car fs) Tlabel))
-                 (dlet ((*exit-label* (next-label)))
-                       (CJT (car fs) Tlabel)
-                       (wt-label *exit-label*))))
-    ((FMLA-NOT) (CJF (cadr fmla) Tlabel))
-    (else (c2get-expr* fmla)
-          (wt `(jmp-if-true ,(touch-label Tlabel))))))
-
-(define (CJF fmla Flabel)
-  (case (car fmla)
-    ((FMLA-AND) (do ((fs (cdr fmla) (cdr fs)))
-                    ((null? (cdr fs))
-                     (CJF (car fs) Flabel))
-                  (dlet ((*exit-label* (next-label)))
-                        (CJF (car fs) Flabel)
-                        (wt-label *exit-label*))))
-    ((FMLA-OR) (do ((fs (cdr fmla) (cdr fs)))
-                   ((null? (cdr fs))
-                    (CJF (car fs) Flabel))
-                 (let ((Tlabel *exit-label*))
-                   (dlet ((*exit-label* (next-label)))
-                         (CJT (car fs) Tlabel)
-                         (wt-label *exit-label*)))))
-    ((FMLA-NOT) (CJT (cadr fmla) Flabel))
-    (else (c2get-expr* fmla)
-          (wt `(jmp-if-false ,(touch-label Flabel))))))
-
-;; c1expr, (c1and args)
 (define (c1and args)
   (cond ((end? args) c1true)
         ((end? (cdr args)) (c1expr (car args)))
         (else `(and ,@(c1args args))
               #;(list c2and (c1args args))))) ;; 引数を解析
 
-;; c1expr, (c1or args)
 (define (c1or args)
   (cond ((end? args) c1false)
         ((end? (cdr args)) (c1expr (car args)))
         (else `(or ,@(c1args args))
               #;(list c2or (c1args args))))) ;; 引数を解析
 
-(define (c2and forms)
-  (do ((forms forms (cdr forms)))
-      ((null? (cdr forms))
-       (c2expr (car forms))) ;; 最後の式の評価結果を返す
-    (c2get-expr* (car forms))
-    (let ((label (next-label2)))
-      (wt `(jmp-if-true ,(touch-label label))) ;; ,(cdr lable)じゃだめ???
-      (if (eq? *value-to-go* 'PUSH) (wt '(push-bx)))
-      (exit-always)
-      (wt-label label))))
-
-(define (c2or forms)
-  (dlet ((*sp* *sp*))
-        (do ((forms forms (cdr forms)))
-            ((null? (cdr forms))
-             (c2expr (car forms))) ;; 最後の式の評価結果を返す
-          (c2get-expr* (car forms))
-          (let ((label (next-label2)))
-            (wt `(jmp-if-false ,(touch-label label))) ;; ,(cdr lable)じゃだめ???
-            (if (eq? *value-to-go* 'PUSH) (wt '(push-bx)))
-            (exit-always)
-            (wt-label label)))))
-
-;; 展開したcondをc1exprにわたす
-;; c1expr, (c1cond args)
 (define (c1cond args)
   (c1expr (c1expand-cond args)))
 
 ;; cond式を展開する. 基本的に入れ子のifとbeginにする
-;; c1cond, (c1expand-cond args)
 (define (c1expand-cond args)
   (if (null? args)
       #;(cadr c1cond-else-default)
@@ -377,7 +177,6 @@
                          (begin ,@(cdr clause)) ;; test式が真ならその節の残りの式をすべて評価
                          ,(c1expand-cond rest)))))))
 
-;; c1expr, (c1case args)
 (define (c1case args) ;; (case key ((data ...) exp ...) ...)
   (cond ((end? args) (scbad-args 'case args))
         ((end? (cdr args)) ;; keyしかない
@@ -388,7 +187,6 @@
                       ,(c1expand-case temp (cdr args))))))))
 
 ;; case式をcaseを使わない形に展開する
-;; c1case, (c1expand-case temp (cdr args))
 (define (c1expand-case key clauses)
   (if (end? clauses) 
       (cadr c1cond-else-default) ;; else節なし
@@ -404,8 +202,6 @@
                          ,(c1expand-case key rest)))))))
 
 ;;; SCEVAL  The Expression Dispatcher.
-;; c1begin, (c1expr (car forms))
-;; compile-expr, (c1expr form), *env*->()
 (define (c1expr form)
   (cond ((symbol? form) 
          (c1vref form)) ;; 変数参照
@@ -431,18 +227,19 @@
                     ((quasiquote) (c1quasiquote args))
                     ((define) (c1define args)) ;; エラー
                     ((macro) (c1macro args)) ;; エラー
-                    (else (if (>= *re-compile-level* 2)
-                              (set-fun-data fun)) ;;;;; By A243  Nov, 1992 ;;;;;
-                          #;(if (macro-function fun)
-                          (c1expr ((macro-function fun) form))
-                          (c1symbol-fun fun args))
-                          (c1symbol-fun fun args)))) ;; (f args)の呼び出し
+                    (else
+                     #;(if (>= *re-compile-level* 2)
+                     (set-fun-data fun)) ;;;;; By A243  Nov, 1992 ;;;;;
+                     #;(if (macro-function fun)
+                     (c1expr ((macro-function fun) form))
+                     (c1symbol-fun fun args))
+                     (c1symbol-fun fun args)))) ;; (f args)の呼び出し
                  ((and (pair? fun)
                        (eq? (car fun) 'lambda)) ;; ((lambda ...) args)
                   (c1lambda-fun (cdr fun) args)) ;; ((...) ...) ;; let式に書き換える
                  (else
                   `(,(c1expr fun) ,@(c1args args)) ;; c.scm
-                  #;(list c2funcall (c1expr fun) (c1args args)))))) ;; どういうパターンか
+                  #;(list c2funcall (c1expr fun) (c1args args))))))
         (else
          (case form
            ((#f) c1false)
@@ -450,27 +247,21 @@
            ((()) c1null)
            (else (c1constant form))))))
 
-;; c1expr, (c1symbol-fun fun args)
 (define (c1symbol-fun name args)
   (let parse ((env *env*)
               (ccb #f))
-    (cond ((null? env) ;; グローバル関数を呼び出す
-           #;`(,c2funcall (,c2gvref ,name) ,(c1args args))
-           `(,name ,@(c1args args)))
+    (cond ((null? env)
+           `(,name ,@(c1args args))
+           #;`(,c2funcall (,c2gvref ,name) ,(c1args args)))
           ((eq? (car env) 'CB)
-           (parse (cdr env) #t)) ;; lambda式内部?
-          ((eq? (var-name (car env)) name) ;; ローカル関数を呼び出す
+           (parse (cdr env) #t))
+          ((eq? (var-name (car env)) name)
            (if ccb (set-var-closed (car env) #t))
-           #;`(,c2funcall (,c2vref ,(car env) ,ccb) ,(c1args args))
-           `(,(car env) ,@(c1args args)))
-          (else
-           (parse (cdr env) ccb)))))
+           `(,(var-name (car env)) ,@(c1args args)) ;; var-nameで名前だけ返す
+           #;`(,c2funcall (,c2vref ,(car env) ,ccb) ,(c1args args)))
+          (else (parse (cdr env) ccb)))))
 
-;; ((lambda params body) args)
-;; 各paramsにargsを束縛するlet式に変形する
-;; c1expr, (c1lambda-fun (cdr fun) args)
 (define (c1lambda-fun lambda-expr args)
-  ;; 仮引数と実引数のリストのリストを作成, ((param arg) ...)
   (define (make-defs vl as) ;; lambda式の引数のリストとlambda式に渡す引数
     (cond ((null? vl)
            (if (not (null? as))
@@ -492,275 +283,20 @@
       (c1let (cons (make-defs (car lambda-expr) args)
                    (cdr lambda-expr))))) ;; (...), lambda式の実行本体部分
 
-;; args先頭から解析し、リストにする
-;; c1symbol-fun, (c1args args)
-;; c1and, (c1args args)
-;; c1or, (c1args args)
 (define (c1args forms)
   (if (end? forms)
       '()
       (cons (c1expr (car forms))
             (c1args (cdr forms)))))
 
-(define (c2expr form) (apply (car form) (cdr form)))
-
-(define (c2push-expr* form)
-  (dlet ((*value-to-go* 'PUSH) (*exit* 'NEXT) (*exit-label* (next-label)))
-        (c2expr form)
-        (wt-label *exit-label*)
-        (set! *sp* (- *sp* 1))))
-
-(define (c2get-expr* form)
-  (dlet ((*value-to-go* 'BX)
-         (*exit* 'NEXT)
-         (*exit-label* (next-label)))
-        (c2expr form)
-        (wt-label *exit-label*)))
-
-(define (c2funcall fun args)
-  (if (and (eq? (car fun) c2vref) (var-local-fun (cadr fun)))
-      (if (let* ((actuals (length args))
-                 (x (var-local-fun-args (cadr fun)))
-                 (requireds (length (car x))))
-            (or (< actuals requireds)
-                (and (null? (cadr x)) (> actuals requireds))))
-          (scerror "Wrong number of args to the local fun ~s."
-                   (var-name (cadr fun)))
-          (case *exit*
-            ((XRETURN LRETURN)
-             (cond ((< *level* (var-local-fun (cadr fun)))
-                    (c2lcall *exit* fun args))
-                   ((and (= *level* (var-local-fun (cadr fun)))
-                         (not (null? args))
-                         (null? (cdr args))
-                         (= *sp* -1))
-                    (c2get-expr* (car args))
-                    (wt '(set-lval0 -1))
-                    (wt `(lcall ,(touch-label (var-loc (cadr fun))))))
-                   (else
-                    (dlet ((*bp* *bp*) (*sp* *sp*))
-                          (if (not (null? args))
-                              (do ((x args (cdr x)))
-                                  ((null? (cdr x))
-                                   (c2get-expr* (car x)))
-                                (c2push-expr* (car x))))
-                          (wt `(trlcall ,(- *level* (var-local-fun (cadr fun)))
-                                        ,(length args)
-                                        ,(touch-label (var-loc (cadr fun)))))))))
-            (else (cond ((and (not (eq? *value-to-go* 'PUSH))
-                              (or (eq? *exit* 'NEXT) (eq? *exit* 'ESCAPE)))
-                         (c2lcall (touch-label *exit-label*) fun args))
-                        (else (let ((label (next-label2)))
-                                (c2lcall (touch-label label) fun args)
-                                (wt-label label))
-                              (if (eq? *value-to-go* 'PUSH) (wt '(push-bx)))
-                              (cmp:exit))))))
-
-      (or (and *inline-functions* (c2call-simple-function fun args))
-          (case *exit*
-            ((XRETURN LRETURN)
-             (dlet ((*bp* *bp*) (*sp* *sp*))
-                   (if (null? args)
-                       (c2get-expr* fun)
-                       (begin (c2push-expr* fun)
-                              (do ((x args (cdr x)))
-                                  ((null? (cdr x))
-                                   (c2get-expr* (car x)))
-                                (c2push-expr* (car x)))))
-                   (wt `(,(if (eq? *exit* 'XRETURN) 'trcall 'ltrxcall)
-                         ,(length args)))))
-            (else (cond ((and (not (eq? *value-to-go* 'PUSH))
-                              (or (eq? *exit* 'NEXT) (eq? *exit* 'ESCAPE)))
-                         (c2xcall *exit-label* fun args))
-                        (else (let ((label (next-label2)))
-                                (c2xcall label fun args)
-                                (wt-label label))
-                              (if (eq? *value-to-go* 'PUSH) (wt '(push-bx)))
-                              (cmp:exit))))))))
-
-(define (c2lcall return fun args)
-  (dlet ((*bp* *bp*) (*sp* *sp*))
-        (let ((level (- *level* (var-local-fun (cadr fun)))))
-          (if (negative? level)
-              (wt `(open-lframe-1 ,*bp* ,return))
-              (wt `(open-lframe ,*bp* ,level ,return))))
-        (for-each c2push-expr* args)
-        (wt `(lcall ,(touch-label (var-loc (cadr fun))) ,return))))
-
-(define (c2xcall return fun args)
-  (dlet ((*bp* *bp*) (*sp* *sp*))
-        (wt `(open-frame ,(touch-label return)))
-        (c2push-expr* fun)
-        (for-each c2push-expr* args)
-        (wt `(xcall ,(cdr return)))))
-
-(define (c2call-simple-function fun args)
-  (and (eq? (car fun) c2gvref)
-       (case (cadr fun)
-         ((car cdr not null? caar cadr cdar cddr pair? symbol? zero? 1+ 1-
-               vector? vector-length
-               $$car $$cdr $$not $$null? $$caar $$cadr $$cdar $$cddr $$pair?
-               $$symbol? $$zero? $$1+ $$1- $$vector? $$vector-length)
-          (and (not (null? args))
-               (null? (cdr args))
-               (begin (c2get-expr* (car args))
-                      (wt (case (cadr fun)
-                            ((car $$car) '(get-car))
-                            ((cdr $$cdr) '(get-cdr))
-                            ((not $$not) '(not))
-                            ((null? $$null?) '(null?))
-                            ((caar $$caar) '(get-caar))
-                            ((cadr $$cadr) '(get-cadr))
-                            ((cdar $$cdar) '(get-cdar))
-                            ((cddr $$cddr) '(get-cddr))
-                            ((pair? $$pair?) '(pair?))
-                            ((symbol? $$symbol?) '(symbol?))
-                            ((zero? $$zero?) '(zero?))
-                            ((1+ $$1+) '(1+))
-                            ((1- $$1-) '(1-))
-                            ((vector? $$vector?) '(vector?))
-                            ((vector-length $$vector-length)
-                             '(vector-length))))
-                      (if (eq? *value-to-go* 'PUSH) (wt '(push-bx)))
-                      (cmp:exit) #t)))
-         ((cons $$cons)
-          (and (not (null? args))
-               (not (null? (cdr args)))
-               (null? (cddr args))
-               (begin
-                 (cond ((eq? (caar args) c2constant)
-                        (c2get-expr* (cadr args))
-                        (wt `(make-cons1 ,(cadar args))))
-                       ((eq? (caadr args) c2constant)
-                        (c2get-expr* (car args))
-                        (wt (if (null? (cadadr args))
-                                '(ncons)
-                                `(make-cons2 ,(cadadr args)))))
-                       (else
-                        (c2push-expr* (car args))
-                        (c2get-expr* (cadr args))
-                        (wt '(make-cons))))
-                 (if (eq? *value-to-go* 'PUSH) (wt '(push-bx)))
-                 (cmp:exit) #t)))
-         ((list $$list)
-          (cond ((null? args) (c2constant '()))
-                ((<= (length args) 5)
-                 (do ((x args (cdr x)))
-                     ((null? (cdr x))
-                      (c2get-expr* (car x))
-                      (wt '(ncons)))
-                   (c2push-expr* (car x)))
-                 (dotimes (i (- (length args) 1)) (wt '(make-cons)))
-                 (if (eq? *value-to-go* 'PUSH) (wt '(push-bx)))
-                 (cmp:exit) #t)
-                (else #f)))
-         ((eq? eqv? equal? $$eq? $$eqv? $$equal?)
-          (and (not (null? args))
-               (not (null? (cdr args)))
-               (null? (cddr args))
-               (begin
-                 (cond ((eq? (caar args) c2constant)
-                        (c2get-expr* (cadr args))
-                        (wt (list (case (cadr fun)
-                                    ((eq? $$eq?) 'eq-const?)
-                                    ((eqv? $$eqv?) 'eqv-const?)
-                                    ((equal? $$equal?) 'equal-const?))
-                                  (cadar args))))
-                       ((eq? (caadr args) c2constant)
-                        (c2get-expr* (car args))
-                        (wt (if (not (null? (cadadr args)))
-                                (list (case (cadr fun)
-                                        ((eq? $$eq?) 'eq-const?)
-                                        ((eqv? $$eqv?) 'eqv-const?)
-                                        ((equal? $$equal?) 'equal-const?))
-                                      (cadadr args))
-                                '(null?))))
-                       (else
-                        (c2push-expr* (car args))
-                        (c2get-expr* (cadr args))
-                        (wt (case (cadr fun)
-                              ((eq? $$eq?) '(eq?))
-                              ((eqv? $$eqv?) '(eqv?))
-                              ((equal? $$equal?) '(equal?))))))
-                 (if (eq? *value-to-go* 'PUSH) (wt '(push-bx)))
-                 (cmp:exit) #t)))
-         ((+ * - / < > <= >= = set-car! set-cdr! vector-ref
-             $$+ $$* $$- $$/ $$< $$> $$<= $$>= $$= $$set-car! $$set-cdr!
-             $$vector-ref)
-          (and (not (null? args))
-               (or (and (not (null? (cdr args)))
-                        (null? (cddr args))
-                        (begin
-                          (c2push-expr* (car args))
-                          (c2get-expr* (cadr args))
-                          (wt (case (cadr fun)
-                                ((+ $$+) '(+))
-                                ((* $$*) '(*))
-                                ((- $$-) '(-))
-                                ((/ $$/) '(/))
-                                ((< $$<) '(<))
-                                ((> $$>) '(>))
-                                ((<= $$<=) '(<=))
-                                ((>= $$>=) '(>=))
-                                ((= $$=) '(=))
-                                ((set-car! $$set-car!) '(set-car!))
-                                ((set-cdr! $$set-cdr!) '(set-cdr!))
-                                ((vector-ref $$vector-ref) '(vector-ref))))
-                          (if (eq? *value-to-go* 'PUSH) (wt '(push-bx)))
-                          (cmp:exit) #t))
-                   (case (cadr fun)
-                     ((- / $$- $$/)
-                      (and (null? (cdr args))
-                           (begin
-                             (c2get-expr* (car args))
-                             (wt (case (cadr fun)
-                                   ((- $$-) '(0-))
-                                   ((/ $$/) '(1/))))
-                             (if (eq? *value-to-go* 'PUSH) (wt '(push-bx)))
-                             (cmp:exit) #t)))
-                     (else #f)))))
-         ((vector-set! $$vector-set!)
-          (and (not (null? args))
-               (not (null? (cdr args)))
-               (not (null? (cddr args)))
-               (null? (cdddr args))
-               (begin
-                 (c2push-expr* (caddr args))
-                 (c2push-expr* (car args))
-                 (c2get-expr* (cadr args))
-                 (wt '(vector-set!))
-                 (if (eq? *value-to-go* 'PUSH) (wt '(push-bx)))
-                 (cmp:exit) #t)))
-         (else #f))))
-
-;; c1body, (c1begin body), bodyは式のリスト
-;; c1expr, (c1begin args), (begin ...)
 (define (c1begin forms)
   (cond ((end? forms)
          c1begin-empty-default) 
         ((end? (cdr forms))
          (c1expr (car forms))) ;; 式が一つだけ
         (else
-         #;(list 'begin (c1map c1expr forms))
-         `(begin ,@(c1map c1expr forms))
-         #;(list c2begin (c1map c1expr forms))))) ;;複数の式があるとき
+         `(begin ,@(c1map c1expr forms)))))
 
-(define (c2begin forms)
-  (do ((l forms (cdr l)))
-      ((null? (cdr l))
-       (c2expr (car l))) ;; 最後の式の評価結果を返す
-    (dlet ((*value-to-go* 'TRASH)
-           (*exit* 'NEXT)
-           (*exit-label* (next-label))) ;; ((+ *last-label* 1) . #f)
-          (c2expr (car l))
-          (wt-label *exit-label*))))
-
-;; lambda式の本体部分を解析する
-;; ローカルdefineがあればdefsに追加し, c1bodyで再帰的に解析
-;; ローカルdefineがあればc1letrecで処理
-;; ローカルdefineがなければc1beginで処理
-;; c1lam, 引数:bodyはlambda式の本体, defsはnull
-;; c1letrec, (c1body (cdr args) '())
 (define (c1body body defs)
   (if (end? body)
       (if (not (null? defs))
@@ -769,8 +305,8 @@
       (let ((form (car body))) 
         (cond ((and (pair? form) (eq? (car form) 'define)) ;; ローカルdefineのとき
                (if (or (end? (cdr form)) 
-                       (end? (cddr form)) ) 
-                                        ;                       (not (end? (cdddr form))))
+                       (end? (cddr form)) )
+                   ;                       (not (end? (cdddr form))))
                    (scbad-args 'define (cdr form)))
                (c1body (cdr body) ;; ローカルdefineをdefsに追加し, 残りの本体を再帰的に解析
                        (cons (if (pair? (cadr form)) ;; 省略記法を使ったローカル関数定義の場合
@@ -783,208 +319,43 @@
               (else ;; ローカルdefineがあるとき
                (c1letrec (cons (reverse defs) body)))))))
 
-;;; SCEXIT  Exit Manager.
-
-;; c2gvref, c2constant
-(define *value-to-go* 'BX)
-(define *exit* 'XRETURN)
-(define *exit-label* '())
-(define *unwind-sp* 0) ;; 巻き戻すスタックポインタ?
-
-;; c2gvref
-;; c2delay
-(define (cmp:exit)
-  (case *exit*
-    ((ESCAPE) (wt `(jmp ,(touch-label *exit-label*)))) ;; *bc-codep*を(`(jmp ,(cdr *exit-label*))に書き換え
-    ((UNWIND-NEXT) (wt-reset-sp *unwind-sp*)) ;; *unwind-sp*!=*sp*なら*bc-codep*を`(reset-sp ,(- *unwind-sp* *sp*))に書き換え
-    ((UNWIND-ESCAPE) (wt-reset-sp *unwind-sp*) ;; *unwind-sp*!=*sp*なら*bc-codep*を`(reset-sp ,(- *unwind-sp* *sp*))に書き換え
-     (wt `(jmp ,(touch-label *exit-label*)))) ;; *bc-codep*を(`(jmp ,(cdr *exit-label*))に書き換え
-    ((XRETURN) (wt '(xreturn))) ;; *exit*の初期値, *bc-codep*を('(xreturn))に書き換え
-    ((LRETURN) (wt '(lreturn))))) ;; *bc-codep*を('(lreturn))に書き換え
-
-;; c2and
-;; c2or
-(define (exit-always)
-  (case *exit*
-    ((NEXT ESCAPE) (wt `(jmp ,(touch-label *exit-label*))))
-    ((UNWIND-NEXT UNWIND-ESCAPE) (wt-reset-sp *unwind-sp*)
-     (wt `(jmp ,(touch-label *exit-label*))))
-    ((XRETURN) (wt '(xreturn)))
-    ((LRETURN) (wt '(lreturn)))))
-
-;;; SCFUNC  Lambda Expression.
-
-;; c1expr, (c1lambda args), ((...) ...)?
-;; c1letrec, (c1lambda (cdr form)), ((...) ...)
 (define (c1lambda args)
   (dlet ((*env* (cons 'CB *env*))) 
-        #;(cons c2lambda (cons (cons 'lambda args) (c1lam args)))
-        (cons 'lambda (c1lam args))))
+        (cons 'lambda (c1lam args)) ;; c.scm:c0
+        #;(cons c2lambda (cons (cons 'lambda args) (c1lam args)))))
 
-;; c1expr, (c1delay args), (...)
 (define (c1delay args)
   (dlet ((*env* (cons 'CB *env*)))
-        (cons c2delay (cddr (c1lam (cons '() args)))))) ;; lambda式の無引数版
-
-;; lambda式の引数部分と本体部分を解析したリストを返す, ((情報変数 ...) () ...), (() 情報変数 ...)
-;; (lambda (...) ...) -> ((解析したlambda式の引数のリスト) () (本体の解析結果))
-;; (lambda x ...) -> (() (解析したx) (本体の解析結果))
-;; compile-function, (let ((x v) ...) ...)
-;; c1lambda, (c1lam args), 引数はlambda式の引数((...) ...)
-;; c1delay, (c1lam (cons '() args)), (() ...) lambda式の無引数版
-;; c1named-let, (c1lam arg-body), ((vars) body)
-;; c1letrec, (c1lambda (cdr form))
-#;(define (c1lam lambda-expr)
-(if (end? lambda-expr) (scbad-args 'lambda lambda-expr)) 
-(let ((requireds '()) ;; 情報変数のリスト
-      (rest '())) ;; 任意引数の場合はその記号の情報変数となる
-  (dlet ((*env* *env*))
-        (do ((vl (car lambda-expr) (cdr vl))) ;; vlはlambdaの仮引数のリスト
-            ((not (pair? vl)) ;; vlがnullまたは記号単体
-             (if (not (null? vl)) ;; 記号単体
-                 (let ((var (make-var vl)))
-                   (set! *env* (cons var *env*)) ;; *env*に作成したリストを追加する
-                   (set! rest var))) ;; restはvlが記号のリストではなかった場合のみ記号vlの情報を格納したリストに書き換わる
-             (list (reverse requireds) 
-                   rest ;; (not (null? vl))が偽ならnull, 真なら記号vlの情報を格納したリスト
-                   (c1body (cdr lambda-expr) '()))) ;; lambda式の本体部分を解析
-          (let ((var (make-var (car vl))))
-            (set! requireds (cons var requireds)) ;; 作成した情報変数をrequiredsに追加する
-            (set! *env* (cons var *env*))))))) ;; 作成した情報変数を*env*に追加する
+        (cons 'delay (c1lam (cosn '() args))) ;; c.scm:c0
+        #;(cons c2delay (cddr (c1lam (cons '() args)))))) ;; lambda式の無引数版
 
 (define (c1lam lambda-expr)
-  (if (end? lambda-expr) (scbad-args 'lambda lambda-expr)) 
-  (let ((requireds '()) ;; 情報変数のリスト
-        (rest '())) ;; 任意引数の場合はその記号の情報変数となる
+  (if (end? lambda-expr) (scbad-args 'lambda lambda-expr))
+  (let ((requireds '()) (rest '()))
     (dlet ((*env* *env*))
-          (do ((vl (car lambda-expr) (cdr vl))) ;; vlはlambdaの仮引数のリスト
-              ((not (pair? vl)) ;; vlがnullまたは記号単体
-               (if (not (null? vl)) ;; 記号単体
-                   (let ((var (make-var vl)))
-                     (set! *env* (cons var *env*)) ;; *env*に作成したリストを追加する
-                     (list var (c1body (cdr lambda-expr) '())))
-                   (list (reverse requireds) 
-                         (c1body (cdr lambda-expr) '())))) ;; lambda式の本体部分を解析
-            (let ((var (make-var (car vl))))
-              (set! requireds (cons var requireds)) ;; 作成した情報変数をrequiredsに追加する
-              (set! *env* (cons var *env*)))))))
+      (do ((vl (car lambda-expr) (cdr vl)))
+          ((not (pair? vl))
+           (if (not (null? vl))
+               (let ((var (make-var vl)))
+                 (set! *env* (cons var *env*))
+                 (set! rest var)))
+           (list (if (null? rest) ;; c.scm:c0
+                     (if (null? requireds)
+                         requireds
+                         (map var-name (reverse requireds)))
+                     (var-name rest))
+                 (c1body (cdr lambda-expr) '()))
+           #;(list (reverse requireds)
+                 rest
+                 (c1body (cdr lambda-expr) '())))
+        (let ((var (make-var (car vl))))
+          (set! requireds (cons var requireds))
+          (set! *env* (cons var *env*)))))))
 
 (define (make-arg-info requireds rest)
   (if (null? rest)
       (* (+ requireds 1) 4)
       (+ (* (+ requireds 1) 8) 3)))
-
-;; たぶんc2exprで実行されるんだと思う
-;; (c2lambda (lambda params body) (情報変数 ...) () body)
-;; (c2lambda (lambda params body) () 情報変数 body)
-(define (c2lambda lam requireds rest body)
-  (if (zero? *re-compile-level*) (set! lam '())) ;;;;; By A243  Dec, 1992 ;;;;
-  (if (not (eq? *value-to-go* 'TRASH))
-      (let ((label (next-label2))
-            (arg-info (make-arg-info (length requireds) rest)))
-        (cond ((null? *clink*)
-               ;; for DOS
-                                        ;(set! *cclosures*
-                                        ;      (cons (list label *ccb-vs* requireds rest body)
-                                        ;            *cclosures*))
-               ;; for UNIX
-               (set! *cclosures*
-                     (cons (list c2local-lam label requireds rest body)
-                           *cclosures*))
-               ;;
-               (wt `(make-nil-closure ,arg-info ,(touch-label label) ,lam)))
-              (else 
-               ;; for DOS
-                                        ;(set! *cclosures*
-                                        ;      (cons (list label *ccb-vs* requireds rest body)
-                                        ;            *cclosures*))
-               ;; for UNIX
-               (set! *cclosures*
-                     (cons (list c2cclosure label *ccb-vs* requireds rest body)
-                           *cclosures*))
-               ;;
-               (wt (if (= (car *clink*) *level*)
-                       `(get-lval0 ,(- (cdr *clink*) *bp*))
-                       `(get-lval ,*bp* ,(- *level* (car *clink*))
-                                  ,(cdr *clink*))))
-               (wt `(make-closure ,arg-info ,(touch-label label) ,lam))))
-        (if (eq? *value-to-go* 'PUSH) (wt '(push-bx)))))
-  (cmp:exit))
-
-;; たぶんc2exprで実行される  
-(define (c2delay body)
-  (if (not (eq? *value-to-go* 'TRASH))
-      (let ((label (next-label2)))
-        (set! *cclosures*
-              ;; for DOS
-                                        ;(cons (list label *ccb-vs* '() '() body)
-                                        ;      *cclosures*)
-              ;; for UNIX
-              (cons (list c2cclosure label *ccb-vs* '() '() body)
-                    *cclosures*)
-              ;;
-              )
-        (wt (cond ((null? *clink*) '(get-const ()))
-                  ((= (car *clink*) *level*)
-                   `(get-lval0 ,(- (cdr *clink*) *bp*)))
-                  (else `(get-lval ,*bp* ,(- *level* (car *clink*))
-                                   ,(cdr *clink*)))))
-        (wt `(make-promise ,(touch-label label)))
-        (if (eq? *value-to-go* 'PUSH) (wt '(push-bx)))))
-  (cmp:exit))
-
-;; compile-function
-(define (c2lam label requireds rest body)
-  (wt-label label)
-  (dlet ((*cenv-length* 0)
-         (*cenv-loc* '())
-         (*clink* '())
-         (*ccb-vs* 0)
-         (*level* 0)
-         (*bp* 0)
-         (*sp* -1))
-        (for-each c2lambda-bind requireds)
-        (if (not (null? rest))
-            (c2lambda-bind rest))
-        (dlet ((*value-to-go* 'BX)
-               (*exit* 'XRETURN))
-              (c2expr body))))
-
-(define (c2local-lam label requireds rest body)
-  (let ((magic (begin-local-function)))
-    (wt-label label)
-    (dlet ((*cenv-length* 0) (*cenv-loc* '()) (*clink* '()) (*ccb-vs* 0)
-           (*level* 0) (*bp* 0) (*sp* -1))
-          (for-each c2lambda-bind requireds)
-          (if (not (null? rest)) (c2lambda-bind rest))
-          (dlet ((*value-to-go* 'BX) (*exit* 'XRETURN)) (c2expr body)))
-    (end-local-function magic)))
-
-(define (c2cclosure label cenv-length requireds rest body)
-  (dlet ((*cenv-length* cenv-length))
-        (let ((magic (begin-local-function)))
-          (wt-label label)
-          (dlet ((*cenv-loc* (- 0 (length requireds) (if (null? rest) 2 3))))
-                (dlet ((*clink* (cons 0 *cenv-loc*)) (*ccb-vs* *cenv-length*)
-                       (*level* 0) (*bp* 0) (*sp* -1))
-                      (for-each c2lambda-bind requireds)
-                      (if (not (null? rest)) (c2lambda-bind rest))
-                      (set! *sp* (- *sp* 1))
-                      (dlet ((*value-to-go* 'BX) (*exit* 'XRETURN)) (c2expr body))))
-          (end-local-function magic))))     
-
-(define (c2local-fun label cenv-length cenv-loc clink ccb-vs level
-                     requireds rest body)
-  (dlet ((*cenv-length* cenv-length) (*cenv-loc* cenv-loc) (*clink* clink)
-         (*ccb-vs* ccb-vs) (*level* level))
-        (let ((magic (begin-local-function)))
-          (wt-label label)
-          (dlet ((*bp* 0) (*sp* 0))
-                (for-each c2lambda-bind requireds)
-                (if (not (null? rest))
-                    (begin (wt `(make-rest ,(- *sp* 1))) (c2lambda-bind rest)))
-                (dlet ((*value-to-go* 'BX) (*exit* 'LRETURN)) (c2expr body)))
-          (end-local-function magic))))
 
 ;;; SCLETS  Let, Let*, and Letrec.
 
@@ -999,7 +370,6 @@
 
 ;; 変数情報を格納したリストから必要な情報を取り出すインターフェース
 ;; (list name #f #f #f #f '() '()))
-;; c1vref, (var-name var)
 (define (var-name var) (car var)) ;; 名前
 (define (var-funarg var) (cadr var)) ;; 関数ポジション以外で評価されるか
 (define (var-assigned var) (caddr var)) ;; 代入されるか
@@ -1041,8 +411,8 @@
                       (if (or (end? def) (end? (cdr def)) (not (end? (cddr def))))
                           (scbad-binding def))
                       (let ((var (make-var (car def)))) ;; 情報変数を作成
-                        (set! defs (cons (cons var (cadr def)) defs)) ;; (情報変数 . 初期値)をdefsに追加
-                        #;(set! defs (cons (list var (cadr def)) defs)) ;; c.scm
+                        (set! defs (cons (list var (cadr def)) defs)) ;; c.scm:c0
+                        #;(set! defs (cons (cons var (cadr def)) defs)) ;; (情報変数 . 初期値)をdefsに追加
                         (set! *env* (cons var *env*))))
               (set! body (c1body (cdr args) '())))
         ;; 束縛する初期値を初期値の解析結果に置き換える
@@ -1055,9 +425,11 @@
                           (begin (set-cdr! def (c1lam (cdr form)))
                                  (set-var-local-fun var #t)
                                  (set-var-local-fun-args var (cdr def))))
-                      (begin (set-cdr! def (c1expr form)) ;; 初期値がlambda式以外ならc1exprで解析した結果に置き換え
-                             #;(print "c.scm:debug " (c1expr form)))))) ;; debug
-        (list #;c2let 'let (reverse defs) body))))
+                      (set-cdr! def (c1expr form))))) ;; 初期値がlambda式以外ならc1exprで解析した結果に置き換え
+        (dolist (def defs) ;; c.scm:c0
+                (set-car! def (var-name (car def))))
+        (list 'let #;c2let (reverse defs) body))))
+;;20180926ここまで
 
 ;; let*式を解析する
 ;; c1expr, (c1let* args)
@@ -1522,14 +894,14 @@
                (ccb #f))
     (if (null? env)
         #;(list c2gvref name)
-        name 
+        name
         (let ((var (car env)))
           (cond ((eq? var 'CB) 
                  (lookup (cdr env) #t)) ;; ccbはここで書き換え
                 ((eq? (var-name var) name) 
                  (if ccb (set-var-closed var #t)) ;; (list name #f #f #t #f '() '()))
                  (set-var-funarg var #t) ;; (list name #t #f #f #f '() '()))
-                 #;(list c2vref var ccb) var)
+                 #;(list c2vref var ccb) (var-name var))
                 (else (lookup (cdr env) ccb)))))))
 
 (define (c1lookup name)
