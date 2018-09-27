@@ -1,4 +1,8 @@
 ;;; schemeの式を受け取り、変形を行う
+;;; cond, case -> if
+;;; ローカル関数 -> letrec
+;;; do -> 名前付きlet
+;;; 関数位置の生lambda -> let
 
 ;; (define var (lambda params body))
 ;; (define var expr)
@@ -248,18 +252,7 @@
            (else (c1constant form))))))
 
 (define (c1symbol-fun name args)
-  (let parse ((env *env*)
-              (ccb #f))
-    (cond ((null? env)
-           `(,name ,@(c1args args))
-           #;`(,c2funcall (,c2gvref ,name) ,(c1args args)))
-          ((eq? (car env) 'CB)
-           (parse (cdr env) #t))
-          ((eq? (var-name (car env)) name)
-           (if ccb (set-var-closed (car env) #t))
-           `(,(var-name (car env)) ,@(c1args args)) ;; var-nameで名前だけ返す
-           #;`(,c2funcall (,c2vref ,(car env) ,ccb) ,(c1args args)))
-          (else (parse (cdr env) ccb)))))
+  `(,name ,@(c1args args)))
 
 (define (c1lambda-fun lambda-expr args)
   (define (make-defs vl as) ;; lambda式の引数のリストとlambda式に渡す引数
@@ -320,16 +313,24 @@
                (c1letrec (cons (reverse defs) body)))))))
 
 (define (c1lambda args)
+  (cons 'lambda (c1lam args)))
+
+#;(define (c1lambda args)
   (dlet ((*env* (cons 'CB *env*))) 
-        (cons 'lambda (c1lam args)) ;; c.scm:c0
-        #;(cons c2lambda (cons (cons 'lambda args) (c1lam args)))))
+        (cons c2lambda (cons (cons 'lambda args) (c1lam args)))))
 
 (define (c1delay args)
+  (cons 'delay (cdr (c1lam (cons '() args)))))
+
+#;(define (c1delay args)
   (dlet ((*env* (cons 'CB *env*)))
-        (cons 'delay (c1lam (cosn '() args))) ;; c.scm:c0
-        #;(cons c2delay (cddr (c1lam (cons '() args)))))) ;; lambda式の無引数版
+        (cons c2delay (cddr (c1lam (cons '() args)))))) ;; lambda式の無引数版
 
 (define (c1lam lambda-expr)
+  (if (end? lambda-expr) (scbad-args 'lambda lambda-expr))
+  (list (car lambda-expr) (c1body (cdr lambda-expr) '())))
+
+#;(define (c1lam lambda-expr)
   (if (end? lambda-expr) (scbad-args 'lambda lambda-expr))
   (let ((requireds '()) (rest '()))
     (dlet ((*env* *env*))
@@ -339,13 +340,7 @@
                (let ((var (make-var vl)))
                  (set! *env* (cons var *env*))
                  (set! rest var)))
-           (list (if (null? rest) ;; c.scm:c0
-                     (if (null? requireds)
-                         requireds
-                         (map var-name (reverse requireds)))
-                     (var-name rest))
-                 (c1body (cdr lambda-expr) '()))
-           #;(list (reverse requireds)
+           (list (reverse requireds)
                  rest
                  (c1body (cdr lambda-expr) '())))
         (let ((var (make-var (car vl))))
@@ -890,19 +885,7 @@
 ;;; SCVREF  Variable References.
 ;; c1expr, (c1vref form)
 (define (c1vref name)
-  (let lookup ((env *env*) 
-               (ccb #f))
-    (if (null? env)
-        #;(list c2gvref name)
-        name
-        (let ((var (car env)))
-          (cond ((eq? var 'CB) 
-                 (lookup (cdr env) #t)) ;; ccbはここで書き換え
-                ((eq? (var-name var) name) 
-                 (if ccb (set-var-closed var #t)) ;; (list name #f #f #t #f '() '()))
-                 (set-var-funarg var #t) ;; (list name #t #f #f #f '() '()))
-                 #;(list c2vref var ccb) (var-name var))
-                (else (lookup (cdr env) ccb)))))))
+  name)
 
 (define (c1lookup name)
   (let lookup ((env *env*))
@@ -912,49 +895,6 @@
            #t)
           (else (lookup (cdr env))))))
 
-;; ローカル変数の参照, 変更
-;; c1vref, (list c2vref var ccb)          
-(define (c2vref var ccb)
-  (if (not (eq? *value-to-go* 'TRASH)) ;; TRASHになるのはc2beginでだけ
-      (cond (ccb 
-             (let ((n (- *cenv-length* (var-closed var) 1)))
-               (if (zero? *level*)
-                   (case *value-to-go*
-                     ((BX) (wt `(get-cval0 ,(- *cenv-loc* *bp*) ,n)))
-                     ((PUSH) (wt `(push-cval0 ,(- *cenv-loc* *bp*) ,n))))
-                   (case *value-to-go*
-                     ((BX) (wt `(get-cval ,*bp* ,*level* ,*cenv-loc* ,n)))
-                     ((PUSH)
-                      (wt `(push-cval ,*bp* ,*level* ,*cenv-loc* ,n)))))))
-            ((= (car (var-loc var)) *level*)
-             (let ((offset (- (cdr (var-loc var)) *bp*)))
-               (if (or (var-assigned var) (var-closed var))
-                   (case *value-to-go*
-                     ((BX) (wt `(get-hval0 ,offset)))
-                     ((PUSH) (wt `(push-hval0 ,offset))))
-                   (case *value-to-go*
-                     ((BX) (wt `(get-lval0 ,offset)))
-                     ((PUSH) (wt `(push-lval0 ,offset)))))))
-            (else
-             (let ((baseoffset *bp*)
-                   (level (- *level* (car (var-loc var)))) 
-                   (offset (cdr (var-loc var))))
-               (if (or (var-assigned var) (var-closed var))
-                   (case *value-to-go*
-                     ((BX) (wt `(get-hval ,baseoffset ,level ,offset)))
-                     ((PUSH) (wt `(push-hval ,baseoffset ,level ,offset))))
-                   (case *value-to-go*
-                     ((BX) (wt `(get-lval ,baseoffset ,level ,offset)))
-                     ((PUSH) (wt `(push-lval ,baseoffset ,level ,offset)))))))))
-  (cmp:exit))
-
-;; グローバル変数を参照, 変更
-;; c1vref, (list c2gvref name) 
-(define (c2gvref name)
-  (case *value-to-go* ;; 初期値は'BX
-    ((BX) (wt `(get-gval ,name))) ;; *bc-codep*を(`(get-gval ,name))に書き換え
-    ((PUSH) (wt `(push-gval ,name)))) ;; *bc-codep*を(`(push-gval ,name))に書き換え
-  (cmp:exit))
 
 ;; c1expr, (c1set! args)
 (define (c1set! args)
@@ -984,26 +924,6 @@
                          (else
                           (lookup (cdr env) ccb))))))))))
 
-(define (c2set! var ccb form)
-  (c2get-expr* form)
-  (cond (ccb
-         (let ((offset (- *cenv-loc* *bp*))
-               (n (- *cenv-length* (var-closed var) 1)))
-           (if (zero? *level*)
-               (wt `(set-cval0 ,offset ,n))
-               (wt `(set-cval ,*bp* ,*level* ,offset ,n)))))
-        ((= (car (var-loc var)) *level*)
-         (wt `(set-hval0 ,(- (cdr (var-loc var)) *bp*))))
-        (else (wt `(set-hval ,*bp* ,(- *level* (car (var-loc var)))
-                             ,(cdr (var-loc var))))))
-  (if (eq? *value-to-go* 'PUSH) (wt '(push-bx)))
-  (cmp:exit))
-
-(define (c2gset! name form)
-  (c2get-expr* form)
-  (wt `(set-gval ,name))
-  (if (eq? *value-to-go* 'PUSH) (wt '(push-bx)))
-  (cmp:exit))
 
 (define (end? x)
   (cond ((pair? x) #f) 
