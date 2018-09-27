@@ -76,6 +76,16 @@
       (number? x)
       (char? x)
       (string? x)))
+
+(define *newvar-name* "c.scm:")
+(define *newvar* 0)
+(define (newvar . name)
+  (set! *newvar* (+ *newvar* 1))
+  (if (null? name)
+      (string->symbol
+       (string-append *newvar-name* (number->string *newvar*)))	 
+      (string->symbol
+       (string-append (car name) (number->string *newvar*)))))
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Intrinsic constants
 (define (c1constant x)
@@ -162,7 +172,7 @@
               ((and (eq? (cadr clause) '=>) ;; Gauche p.102参照, 省略記法
                     (not (end? (cddr clause)))
                     (end? (cdddr clause)))
-               (let ((temp (gensym)))
+               (let ((temp (newvar) #;(gensym))) ;; c.scm:c0
                  `(let ((,temp ,(car clause))) ;; tempにtest式の結果を保持
                     (if ,temp
                         (,(caddr clause) ,temp) ;; test式が真ならこれを引数にthen式を呼び出す
@@ -176,7 +186,7 @@
         ((end? (cdr args)) ;; keyしかない
          (c1begin (list (car args) (cadr c1cond-else-default)))) ;; keyを評価してnullを返す
         (else
-         (let ((temp (gensym)))
+         (let ((temp (newvar) #;(gensym))) ;; c.scm:c0
            (c1expr `(let ((,temp ,(car args)))
                       ,(c1expand-case temp (cdr args))))))))
 
@@ -444,7 +454,7 @@
 (define (c1do args)
   (if (or (end? args) (end? (cdr args)) (end? (cadr args)))
       (scbad-args 'do args))
-  (let ((name (gensym)))
+  (let ((name (newvar) #;(gensym))) ;; c.scm:c0
 ;    (c1named-let name (car args)
     (c1named-let name (c1map (lambda (x) (list (car x) (cadr x))) (car args))
       `((if ,(caadr args)
