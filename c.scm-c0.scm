@@ -248,17 +248,13 @@
            (else (c1constant form))))))
 
 (define (c1symbol-fun name args)
-  (let parse ((env *env*)
-              (ccb #f))
-    (cond ((null? env)
-           `(,name ,@(c1args args))
-           #;`(,c2funcall (,c2gvref ,name) ,(c1args args)))
-          ((eq? (car env) 'CB)
-           (parse (cdr env) #t))
+  `(,name ,@(c1args))
+  #;(let parse ((env *env*) (ccb #f))
+    (cond ((null? env) `(,c2funcall (,c2gvref ,name) ,(c1args args)))
+          ((eq? (car env) 'CB) (parse (cdr env) #t))
           ((eq? (var-name (car env)) name)
            (if ccb (set-var-closed (car env) #t))
-           `(,(var-name (car env)) ,@(c1args args)) ;; var-nameで名前だけ返す
-           #;`(,c2funcall (,c2vref ,(car env) ,ccb) ,(c1args args)))
+           `(,c2funcall (,c2vref ,(car env) ,ccb) ,(c1args args)))
           (else (parse (cdr env) ccb)))))
 
 (define (c1lambda-fun lambda-expr args)
@@ -291,11 +287,12 @@
 
 (define (c1begin forms)
   (cond ((end? forms)
-         c1begin-empty-default) 
+         c1begin-empty-default)
         ((end? (cdr forms))
-         (c1expr (car forms))) ;; 式が一つだけ
+         (c1expr (car forms)))
         (else
-         `(begin ,@(c1map c1expr forms)))))
+         `(begin ,@(c1map c1expr forms))
+         #;(list c2begin (c1map c1expr forms)))))
 
 (define (c1body body defs)
   (if (end? body)
@@ -339,12 +336,14 @@
                (let ((var (make-var vl)))
                  (set! *env* (cons var *env*))
                  (set! rest var)))
+           ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
            (list (if (null? rest) ;; c.scm:c0
                      (if (null? requireds)
                          requireds
                          (map var-name (reverse requireds)))
                      (var-name rest))
                  (c1body (cdr lambda-expr) '()))
+           ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
            #;(list (reverse requireds)
                  rest
                  (c1body (cdr lambda-expr) '())))
