@@ -2366,3 +2366,5 @@ form))
             (else
              (loop (read iport)
                    (cons expr lst)))))))
+
+(define (myprint x) (write x) (newline) (newline))
