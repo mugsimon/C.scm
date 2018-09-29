@@ -1,3 +1,84 @@
+;;; tutのオリジナルのc1を実行する
+;;; c0を適用済みと想定
+;;; 省略記法のdefine式, ローカルdefine, cond, case, do, 関数位置のlambda, quasiquote, unquote, unquote-splicingはないと想定
+;;; c2~の部分を変更
+;;; ローカル変数はmake-varによるリストになる
+;;; 
+
+;; マクロ
+(define-syntax dlet
+  (syntax-rules ()
+    ((dlet ((var val) ...) body ...)
+     (let ((stack (list var ...)))
+       (define (pop)
+         (let ((top (car stack)))
+           (set! stack (cdr stack))
+           top))
+       (set! var val) ...
+       (let ((retval (begin body ...)))
+         (set! var (pop)) ...
+         retval)))))
+
+(define-syntax dolist
+  (syntax-rules ()
+    ((dolist (var lst) body ...)
+     (let loop ((rest lst))
+       (cond ((null? rest)
+              '())
+             (else
+              (let ((var (car rest)))
+                (begin body ...)
+                (loop (cdr rest)))))))))
+
+(define c.scm:*c1cont* #f)
+
+;; (define var (lambda params body))
+;; (define var expr)
+;; (begin ...)
+;; (fun ...)
+(define (c.scm:c1 x)
+  (call/cc
+   (lambda (cont)
+     (set! c.scm:*c1cont* cont)
+     (if (pair? x)
+         (case (car x)
+           ((define)
+            (let ((form (caddr x)))
+              (if (and (pair? form)
+                       (eq? (car form) 'lambda))
+                  (c.scm:c1compile-function (car x) ;; define
+                                            (cons (cadr x) (cadr form)) ;; (var params), (var . param)
+                                            (cddr form))
+                  `(,(car x) ,(cadr x) ,(c.scm:c1compile-expr form)))))
+           ((begin)
+            `(begin ,@(map c.scm:c1 (cdr x))))
+           (else
+            (c.scm:c1compile-expr x)))
+         (c.scm:c1compile-expr x)))))
+
+;; first->define
+;; args->(var params)|(var . param)
+;; body->expr
+(define (c.scm:c1compile-function first args body)
+  (let ((x (dlet ((*env* '()))
+                 (c1lam (cons (cdr args) body)))))
+    `(,first ,(car args) (lambda ,@x))))
+
+;; form->expr
+(define (c.scm:c1compile-expr form)
+  (let ((x (dlet ((*env* '()))
+                 (c1expr form))))
+    x))
+
+;; 自己評価的データなら#tを返す
+;; x->expr
+(define (c.scm:self-eval? x)
+  (or (boolean? x)
+      (number? x)
+      (char? x)
+      (string? x)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; SCTOPS  Compiler toplevel.
 
 (define *bc-code* '())
@@ -146,7 +227,11 @@
 
 ;;; Intrinsic constants
 
-(define (c1constant x) (list c2constant x))
+(define (c1constant x)
+  #;(list c2constant x)
+  (if (c.scm:self-eval? x)
+      x
+      `(quote ,x)))
 
 (define (c2constant x)
   (case *value-to-go*
@@ -154,12 +239,18 @@
     ((PUSH) (wt `(push-const ,x))))
   (cmp:exit))
 
-(define c1null (list c2constant '()))
-(define c1false (list c2constant #f))
-(define c1true (list c2constant #t))
-(define c1if-else-default (list c2constant '()))
-(define c1cond-else-default (list c2constant '()))
-(define c1begin-empty-default (list c2constant '()))
+(define c1null #;(list c2constant '())
+  `'())
+(define c1false #;(list c2constant #f)
+  #f)
+(define c1true #;(list c2constant #t)
+  #t)
+(define c1if-else-default #;(list c2constant '())
+  `'())
+(define c1cond-else-default #;(list c2constant '())
+  `'())
+(define c1begin-empty-default #;(list c2constant '())
+  `'())
 
 ;;; SCBIND  Variable Binding.
 
@@ -196,7 +287,7 @@
 	  (and (not (end? (cddr args)))
 	       (not (end? (cdddr args)))))
       (scbad-args 'if args))
-  (list c2if
+  (list 'if #;c2if
         (c1fmla (car args))
         (c1expr (cadr args))
         (if (null? (cddr args)) c1if-else-default (c1expr (caddr args)))))
@@ -204,18 +295,18 @@
 (define (c1fmla fmla)
   (if (pair? fmla)
       (case (car fmla)
-        ((AND) (cond
+        ((and #;AND) (cond
                  ((end? (cdr fmla)) c1true)
                  ((end? (cddr fmla)) (c1fmla (cadr fmla)))
-                 (else (cons 'FMLA-AND (c1map c1fmla (cdr fmla))))))
-        ((OR) (cond
+                 (else (cons 'and #;'FMLA-AND (c1map c1fmla (cdr fmla))))))
+        ((or #;OR) (cond
                 ((end? (cdr fmla)) c1false)
                 ((end? (cddr fmla)) (c1fmla (cadr fmla)))
-                (else (cons 'FMLA-OR (c1map c1fmla (cdr fmla))))))
-        ((NOT) (cond ((c1lookup 'not) (c1expr fmla))
+                (else (cons 'or #;'FMLA-OR (c1map c1fmla (cdr fmla))))))
+        ((not #;NOT) (cond ((c1lookup 'not) (c1expr fmla))
                      ((or (end? (cdr fmla)) (not (end? (cddr fmla))))
                       (scbad-args 'not (cdr fmla)))
-                     (else (list 'FMLA-NOT (c1fmla (cadr fmla))))))
+                     (else (list 'not #;'FMLA-NOT (c1fmla (cadr fmla))))))
         (else (c1expr fmla)))
       (c1expr fmla)))
 
@@ -274,12 +365,12 @@
 (define (c1and args)
   (cond ((end? args) c1true)
         ((end? (cdr args)) (c1expr (car args)))
-        (else (list c2and (c1args args)))))
+        (else (list 'and #;c2and (c1args args)))))
 
 (define (c1or args)
   (cond ((end? args) c1false)
         ((end? (cdr args)) (c1expr (car args)))
-        (else (list c2or (c1args args)))))
+        (else (list 'or #;c2or (c1args args)))))
 
 (define (c2and forms)
   (do ((forms forms (cdr forms)))
@@ -379,14 +470,16 @@
                     ((quasiquote) (c1quasiquote args))
                     ((define) (c1define args))
                     ((macro) (c1macro args))
-                    (else (if (>= *re-compile-level* 2)
+                    (else
+                     (c1symbol-fun fun args) ;; c.scm:c1
+                     #;(if (>= *re-compile-level* 2)
                             (set-fun-data fun)) ;;;;; By A243  Nov, 1992 ;;;;;
-                          (if (macro-function fun)
+                          #;(if (macro-function fun)
                               (c1expr ((macro-function fun) form))
                               (c1symbol-fun fun args)))))
                  ((and (pair? fun) (eq? (car fun) 'lambda))
                   (c1lambda-fun (cdr fun) args))
-                 (else (list c2funcall (c1expr fun) (c1args args))))))
+                 (else (list #;c2funcall (c1expr fun) (c1args args))))))
         (else
           (case form
             ((#f) c1false)
@@ -396,11 +489,13 @@
 
 (define (c1symbol-fun name args)
   (let parse ((env *env*) (ccb #f))
-    (cond ((null? env) `(,c2funcall (,c2gvref ,name) ,(c1args args)))
+    (cond ((null? env) `(,name ,(c1args args))
+           #;`(,c2funcall (,c2gvref ,name) ,(c1args args)))
           ((eq? (car env) 'CB) (parse (cdr env) #t))
           ((eq? (var-name (car env)) name)
            (if ccb (set-var-closed (car env) #t))
-           `(,c2funcall (,c2vref ,(car env) ,ccb) ,(c1args args)))
+           `(,(car env) ,(c1args args))
+           #;`(,c2funcall (,c2vref ,(car env) ,ccb) ,(c1args args)))
           (else (parse (cdr env) ccb)))))
 
 (define (c1lambda-fun lambda-expr args)
@@ -660,7 +755,7 @@
 (define (c1begin forms)
   (cond ((end? forms) c1begin-empty-default)
         ((end? (cdr forms)) (c1expr (car forms)))
-        (else (list c2begin (c1map c1expr forms)))))
+        (else (list 'begin #;c2begin (c1map c1expr forms)))))
 
 (define (c2begin forms)
   (do ((l forms (cdr l)))
@@ -719,11 +814,11 @@
 
 (define (c1lambda args)
   (dlet ((*env* (cons 'CB *env*)))
-    (cons c2lambda (cons (cons 'lambda args) (c1lam args)))))
+        (cons 'lambda #;c2lambda (cons (cons 'lambda args) (c1lam args)))))
 
 (define (c1delay args)
   (dlet ((*env* (cons 'CB *env*)))
-    (cons c2delay (cddr (c1lam (cons '() args))))))
+    (cons 'delay #;c2delay (cddr (c1lam (cons '() args))))))
 
 (define (c1lam lambda-expr)
   (if (end? lambda-expr) (scbad-args 'lambda lambda-expr))
@@ -897,7 +992,7 @@
                            (set-var-local-fun var #t)
                            (set-var-local-fun-args var (cdr def))))
                 (set-cdr! def (c1expr form)))))
-        (list c2let (reverse defs) body))))
+        (list 'let #;c2let (reverse defs) body))))
 
 (define (c1let* args)
   (if (end? args) (scbad-args 'let* args))
@@ -920,7 +1015,7 @@
                          (set-var-local-fun var #t)
                          (set-var-local-fun-args var (cdr def))))
               (set-cdr! def (c1expr form))))))
-    (list c2let* (reverse defs) body)))
+    (list 'let* #;c2let* (reverse defs) body)))
 
 (define (c1letrec args)
   (if (end? args) (scbad-args 'letrec args))
@@ -936,7 +1031,7 @@
 
       (dolist (def defs)
         (let ((var (car def)) (form (caddr def)))
-          (if (and (pair? form) (eq? (car form) 'LAMBDA))
+          (if (and (pair? form) (eq? (car form) 'lambda #;'LAMBDA))
               (if (or (var-funarg var) (var-assigned var) (var-closed var))
                   (set-car! (cdr def) (c1lambda (cdr form)))
                   (begin (set-car! (cdr def) (c1lam (cdr form)))
@@ -945,7 +1040,7 @@
               (set-car! (cdr def) (c1expr form)))))
 
       (c1letrec-aux defs))
-    (list c2letrec (reverse defs) body)))
+    (list 'letrec #;c2letrec (reverse defs) body)))
 
 (define (c1letrec-aux defs)
   (define (parse defs)
@@ -974,10 +1069,10 @@
       (let* ((arg-body (cons vars body)) 
              (fun (c1lam arg-body)))
         (cond ((or (var-funarg var) (var-assigned var) (var-closed var))
-               (list c2named-let var inits (c1lambda arg-body)))
+               (list 'let #;c2named-let var inits (c1lambda arg-body)))
               (else (set-var-local-fun var #t)
                     (set-var-local-fun-args var (list vars #f))
-                    (list c2named-let var inits fun)))))))
+                    (list 'let #;c2named-let var inits fun)))))))
 
 (define (c1do args)
   (if (or (end? args) (end? (cdr args)) (end? (cadr args)))
@@ -1284,13 +1379,15 @@
 (define (c1vref name)
   (let lookup ((env *env*) (ccb #f))
     (if (null? env)
-        (list c2gvref name)
+        name ;; c.scm:c1
+        #;(list c2gvref name)
         (let ((var (car env)))
           (cond ((eq? var 'CB) (lookup (cdr env) #t))
                 ((eq? (var-name var) name)
                  (if ccb (set-var-closed var #t))
                  (set-var-funarg var #t)
-                 (list c2vref var ccb))
+                 var ;; c.scm:c1
+                 #;(list c2vref var ccb))
                 (else (lookup (cdr env) ccb)))))))
 
 (define (c1lookup name)
@@ -1356,13 +1453,13 @@
           (else
             (let lookup ((env *env*) (ccb #f))
               (if (null? env)
-                  (list c2gset! name (c1expr form))
+                  (list 'set! #;c2gset! name (c1expr form))
                   (let ((var (car env)))
                     (cond ((eq? var 'CB) (lookup (cdr env) #t))
                           ((eq? (var-name var) name)
                            (if ccb (set-var-closed var #t))
                            (set-var-assigned var #t)
-                           (list c2set! var ccb (c1expr form)))
+                           (list 'set! #;c2set! var ccb (c1expr form)))
                           (else (lookup (cdr env) ccb))))))))))
 
 (define (c2set! var ccb form)
