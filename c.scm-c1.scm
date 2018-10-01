@@ -1047,7 +1047,10 @@
                   (set-car! (cdr def) (c1lambda (cdr form)))
                   (begin (set-car! (cdr def) (c1lam (cdr form)))
                          (set-var-local-fun var #t)
-                         (set-var-local-fun var (reverse (c.scm:difference c.scm:free-vars (cadadr def)))) ;; c.scm, #tの代わりに自由変数のリストをおく
+                         (let ((requireds (caadr def)) ;; c.scm, #tの代わりに自由変数のリストをおく
+                               (rest (cadadr def)))
+                           (set-var-local-fun var (reverse (c.scm:difference (c.scm:difference c.scm:free-vars requireds)
+                                                                             rest))))
                          (set-var-local-fun-args var (cadr def))))
               (set-car! (cdr def) (c1expr form)))))
 
