@@ -68,9 +68,10 @@
                     (else
                      (c5symbol-fun fun args))))
                  (else
-                  (list (c5expr fun) (c5args (car args)))))))
+                  (or (c5expr fun) (c5args (car args)))))))
         (else
          #f)))
+
 (define (c5if args)
   (or (c5expr (car args))
       (c5expr (cadr args))
