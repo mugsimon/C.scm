@@ -78,6 +78,15 @@
       (char? x)
       (string? x)))
 
+;; リストxからリストyの要素を取り除いたリストを返す
+(define (c.scm:difference x y)
+  (cond ((null? x)
+         '())
+        ((member (car x) y)
+         (c.scm:difference (cdr x) y))
+        (else
+         (cons (car x) (c.scm:difference (cdr x) y)))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; SCTOPS  Compiler toplevel.
 
@@ -1030,12 +1039,15 @@
       (set! body (c1body (cdr args) '()))
 
       (dolist (def defs)
-        (let ((var (car def)) (form (caddr def)))
+              (let ((var (car def))
+                    (form (caddr def))
+                    (c.scm:free-vars (c.scm:difference *env* (map car defs)))) ;; c.scm, この時点での自由変数
           (if (and (pair? form) (eq? (car form) 'lambda #;'LAMBDA))
               (if (or (var-funarg var) (var-assigned var) (var-closed var))
                   (set-car! (cdr def) (c1lambda (cdr form)))
                   (begin (set-car! (cdr def) (c1lam (cdr form)))
                          (set-var-local-fun var #t)
+                         (set-var-local-fun var (reverse (c.scm:difference c.scm:free-vars (cadadr def)))) ;; c.scm, #tの代わりに自由変数のリストをおく
                          (set-var-local-fun-args var (cadr def))))
               (set-car! (cdr def) (c1expr form)))))
 
