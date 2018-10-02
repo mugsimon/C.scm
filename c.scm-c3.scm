@@ -144,10 +144,14 @@
     (cond ((null? defs)
            `(let ,(reverse cdefs) ,(c3expr (cadr args))))
           (else
-           (let ((def (car defs)))
+           (let* ((def (car defs))
+                  (var (car def))
+                  (form (cdr def)))
              (loop (cdr defs)
-                   (cons (cons (car def)
-                               (c3expr (cdr def)))
+                   (cons (cons var
+                               (if (var-local-fun var)
+                                   (c3lam form (var-local-fun var)) 
+                                   (c3expr form)))
                          cdefs)))))))
 
 (define (c3letrec args)
