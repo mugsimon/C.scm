@@ -132,15 +132,17 @@
                                params) (c4expr body))))
 
 (define (c4let args)
-  (let loop ((defs (car args))
-             (cdefs '()))
-    (cond ((null? defs)
-           `(let ,(reverse cdefs) ,(c4expr (cadr args))))
+  (if (c.scm:var? (car form))
+      (c4named-let form)     
+      (let loop ((defs (car args))
+                 (cdefs '()))
+        (cond ((null? defs)
+               `(let ,(reverse cdefs) ,(c4expr (cadr args))))
           (else
            (loop (cdr defs)
                  (cons (c4def (car defs))
-                       cdefs))))))
-
+                       cdefs)))))))
+  
 (define (c4def def)
   (let ((var (car def))
         (form (cadr def)))
@@ -153,6 +155,16 @@
              (cdefs '()))
     (cond ((null? defs)
            `(letrec ,(reverse cdefs) ,(c4expr (cadr args))))
+          (else
+           (loop (cdr defs)
+                 (cons (c4def (car defs))
+                       cdefs))))))
+
+(define (c4named-let args)
+  (let loop ((defs (cadr args))
+             (cdefs '()))
+    (cond ((null? defs)
+           `(let ,(car var) ,(reverse cdefs) ,(c4expr (caddr args))))
           (else
            (loop (cdr defs)
                  (cons (c4def (car defs))
