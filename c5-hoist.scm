@@ -1,7 +1,8 @@
-;; (define var (lambda requireds rest body))
+;; (define var (lambda params body))
 ;; (define var expr)
 ;; (begin ...)
 ;; (fun ...)
+;; sexp
 (define (c.scm:c5hoist x)
      (if (pair? x)
          (case (car x)
@@ -166,7 +167,7 @@
            (let ((var (caar defs))
                  (form (cadar defs)))
              (if (var-local-fun var)
-                 (begin (c5hoist--fun (car defs))
+                 (begin (c5hoist-fun (car defs))
                         (loop (cdr defs)
                               cdefs))
                  (loop (cdr defs)
