@@ -196,7 +196,7 @@
   `(set! ,(c3expr (car args)) ,(c3expr (cadr args))))
 
 (define (c3quote args)
-  `(quote ,args))
+  `(quote ,@args))
 
 (define (c3symbol-fun name args)
   `(,name ,@(c3args (car args))))
