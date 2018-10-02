@@ -160,11 +160,11 @@
                  (form (cadar defs))
                  (form0 (caddar defs)))
              (loop (cdr defs)
-                   (cons (if (var-local-fun var)
-                             (list var
+                   (cons (list var
+                               (if (var-local-fun var)
                                    (c3lam form (var-local-fun var))
-                                   form0)
-                             (car defs))
+                                   (c3expr form))
+                               form0)
                          cdefs)))))))
 
 (define (c3set! args)
