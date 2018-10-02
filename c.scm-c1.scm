@@ -994,7 +994,7 @@
           (set! body (c1body (cdr args) '())))
         (dolist (def defs)
           (let ((var (car def)) (form (cdr def)))
-            (if (and (pair? form) (eq? (car form) 'LAMBDA))
+            (if (and (pair? form) (eq? (car form) 'lambda #;'LAMBDA)) ;; c.scm
                 (if (or (var-funarg var) (var-assigned var) (var-closed var))
                     (set-cdr! def (c1lambda (cdr form)))
                     (begin (set-cdr! def (c1lam (cdr form)))
@@ -1017,7 +1017,7 @@
       (dolist (def defs)
         (set! *env* (cdr *env*))
         (let ((var (car def)) (form (cdr def)))
-          (if (and (pair? form) (eq? (car form) 'LAMBDA))
+          (if (and (pair? form) (eq? (car form) 'lambda #;'LAMBDA)) ;; c.scm
               (if (or (var-funarg var) (var-assigned var) (var-closed var))
                   (set-cdr! def (c1lambda (cdr form)))
                   (begin (set-cdr! def (c1lam (cdr form)))
