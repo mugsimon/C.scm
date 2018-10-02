@@ -164,6 +164,17 @@
                      (cons (c3let-def (car defs))
                            ndefs))))))
 
+(define (c3named-let form)
+  (let ((var (car form))
+        (inits (map c3expr (cadr form))) ;; lambda式が束縛されているとしてもc1ではc1exprに通しているのでc1lamの結果となっていることはない
+        (fun (caddr form))) ;; エスケープされるかどうかでc1lambda, c1lamが違う
+    (let ((params (if (var-local-fun var)
+                      (car fun)
+                      (caddr fun))))
+      `(let ,var ,(map list params inits) ,(if (var-local-fun var)
+                                               (cadr (c3lam fun)) ;; 本体部分だけほしい
+                                               (caddr (c3lambda (cdr fun)))))))) ;; 本体部分だけほしい
+
 (define (c3letrec form)
   (let loop ((defs (car form))
              (ndefs '()))
