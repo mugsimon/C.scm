@@ -124,3 +124,31 @@
                (loop (cdr defs)
                      (cons (list (var-name (caar defs)) (c6expr (cdar defs)))
                            ndefs)))))))
+
+(define (c6let* form)
+  (let loop ((defs (car form))
+             (ndefs '()))
+    (cond ((null? defs)
+           `(let* ,(reverse ndefs) ,(c6expr (cadr form))))
+          (else
+               (loop (cdr defs)
+                     (cons (list (var-name (caar defs)) (c6expr (cdar defs)))
+                           ndefs))))))
+
+(define (c6letrec form)
+  (let loop ((defs (car form))
+             (ndefs '()))
+    (cond ((null? defs)
+           `(letrec ,(reverse ndefs) ,(c6expr (cadr x))))
+          (else
+           (loop (cdr defs)
+                 (cons (c6letrec-def (car defs))
+                       ndefs))))))
+
+(define (c6letrec-def def)
+  (let ((var (car def))
+        (expr (cadr def)))
+    (if (var-local-fun var)
+        (list (var-name var) (c6lam expr))
+        (list (var-name var) (c6expr expr)))))
+           
