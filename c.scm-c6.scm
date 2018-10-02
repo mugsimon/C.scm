@@ -60,12 +60,12 @@
                     ((or) (c6or args))
                     ((begin) (c6begin args))
                     ((lambda) (c6lambda args))
-                    ((delay) (c0delay args)) ;; (delay args)
-                    ((let) (c0let args)) 
-                    ((let*) (c0let* args))
-                    ((letrec) (c0letrec args))
-                    ((set!) (c0set! args)) ;;
-                    ((quote) (c0quote args))
+                    ((delay) (c6delay args)) ;; (delay args)
+                    ((let) (c6let args)) 
+                    ((let*) (c6let* args))
+                    ((letrec) (c6letrec args))
+                    ((set!) (c6set! args)) ;;
+                    ((quote) (c6quote args))
                     (else
                      (c6symbol-fun fun args))))
                  (else
@@ -113,6 +113,27 @@
                                     (loop (cdr res))))))))))
       `(lambda ,params ,(c6expr body)))))
 
+(define (c6lam args)
+  (let ((requireds (car args))
+        (rest (cadr args))
+        (body (caddr args)))
+    (let ((params (cond ((and (null? requireds)
+                              (null? rest))
+                         '())
+                        ((null? requireds)
+                         (var-name rest))
+                        ((null? rest)
+                         (map var-name requireds))
+                        (else
+                         (let ((req (map var-name requireds)))
+                           (let loop ((res req))
+                             (cond ((null? (cdr res))
+                                    (set-cdr! res (var-name rest))
+                                    req)
+                                   (else
+                                    (loop (cdr res))))))))))
+      (list params (c6expr body)))))
+
 (define (c6let form)
   (if (c.scm:var? (car form))
       (c6named-let form)
@@ -122,8 +143,15 @@
                `(let ,(reverse ndefs) ,(c6expr (cadr form))))
               (else
                (loop (cdr defs)
-                     (cons (list (var-name (caar defs)) (c6expr (cdar defs)))
+                     (cons (c6let-def (car defs))
                            ndefs)))))))
+
+(define (c6let-def def)
+  (let ((var (car def))
+        (expr (cdr def)))
+    (if (var-local-fun var)
+        (list (var-name var) `(lambda ,@(c6lam expr)))
+        (list (var-name var) (c6expr expr)))))
 
 (define (c6let* form)
   (let loop ((defs (car form))
@@ -132,7 +160,7 @@
            `(let* ,(reverse ndefs) ,(c6expr (cadr form))))
           (else
                (loop (cdr defs)
-                     (cons (list (var-name (caar defs)) (c6expr (cdar defs)))
+                     (cons (c6let-def (car defs))
                            ndefs))))))
 
 (define (c6letrec form)
@@ -149,6 +177,23 @@
   (let ((var (car def))
         (expr (cadr def)))
     (if (var-local-fun var)
-        (list (var-name var) (c6lam expr))
+        (list (var-name var) `(lambda ,@(c6lam expr)))
         (list (var-name var) (c6expr expr)))))
-           
+
+(define (c6set! args)
+  `(set! ,(c6expr (car args)) ,(c6expr (cadr args))))
+
+(define (c6quote args)
+  `(quote ,args))
+
+(define (c6symbol-fun name args)
+  (cond ((c.scm:var? name)
+         `(,(var-name name) ,@(c6args (car args))))
+        (else
+         `(,name ,@(c6args (car args))))))
+
+(define (c6args forms)
+  (if (null? forms)
+      '()
+      (cons (c6expr (car forms))
+            (c6args (cdr forms)))))
