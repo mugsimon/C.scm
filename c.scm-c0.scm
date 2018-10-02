@@ -108,12 +108,11 @@
   `'())
 
 ;;; SCCOND  Conditionals.
-(define (c0if args) 
-  (if (or (end? args) ;; testがない
-          (end? (cdr args)) ;; thenがない
-          (and (not (end? (cddr args))) ;; else節があり
-               (not (end? (cdddr args))))) ;; 更に節がある
-      (scbad-args 'if args)) ;; 引数エラー
+(define (c0if args)
+  (if (or (end? args) (end? (cdr args))
+          (and (not (end? (cddr args)))
+               (not (end? (cdddr args)))))
+      (scbad-args 'if args))
   (list 'if #;c2if
         (c0fmla (car args))
         (c0expr (cadr args))
