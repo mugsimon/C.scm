@@ -1,3 +1,6 @@
+;;; ホイストを行う. 入力はクローズ済み
+;;; 名前付きletでは初期値がローカル関数かわからないのでホイストはしない
+
 ;; (define var (lambda params body))
 ;; (define var expr)
 ;; (begin ...)
@@ -127,12 +130,6 @@
         (body (cadr args)))
     (list 'lambda params (c5expr body))))
 
-#;(define (c5lam args)
-  (let ((requireds (car args))
-        (rest (cadr args))
-        (body (caddr args)))
-    (list requireds rest (c5expr body))))
-
 (define (c5let args)
   (if (c.scm:var? (car args))
       (c5named-let args)
@@ -152,6 +149,20 @@
                            (cons (list (car def)
                                        (c5expr (cadr def)))
                                  cdefs)))))))))
+
+(define (c5named-let args)
+  (let loop ((defs (cadr args))
+             (cdefs '()))
+    (cond ((null? defs)
+           (let ((var (car args))
+                 (body (caddr args)))
+             `(let ,var ,(reverse cdefs) ,(c5expr body))))
+          (else
+           (let ((def (car defs)))
+             (loop (cdr defs)
+                   (cons (list (car def)
+                               (c5expr (cadr def)))
+                         cdefs)))))))
 
 (define (c5hoist-fun def)
   (set! c.scm:*c5local-functions* (cons def c.scm:*c5local-functions*)))
