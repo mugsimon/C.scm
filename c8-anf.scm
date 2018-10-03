@@ -76,10 +76,55 @@
         (else
          (k m))))
 
+(define (c8lambda args k)
+  (let ((params (car args))
+        (body (cadr args)))
+    (k `(lambda ,params ,(c8normalize-term body)))))
+
+(define (c8let* args k)
+  (let ((defs (car args))
+        (body (cadr args)))
+    (if (null? defs)
+        (c8normalize body k)
+        (let ((def (car defs)))
+          (c8normalize (cadr def)
+                       (lambda (n1)
+                         `(let ((,(car def) ,n1))
+                            ,(c8normalize `(let ,(cdr defs) ,body) k))))))))
+
+(define (c8if args k)
+  (let ((m1 (car args))
+        (m2 (cadr args))
+        (m3 (caddr args)))
+    (c8normalize-name m1
+                    (lambda (t)
+                      (k `(if ,t
+                              ,(c8normalize-term m2)
+                              ,(c8normalize-term m3)))))))
+
+(define (c8set! args k)
+  (let ((x (car args))
+        (m (cadr args)))
+    (c8normalize-name m
+                      (lambda (t)
+                        `(let ((,(newvar "c.scm:set!") (set! ,x ,t)))
+                           ,(k x))))))
+
+(define (c8symbol-fun fn m* k)
+  (if (c8primop? fn)
+      (c8normalize-name* m*
+                         (lambda (t*)
+                           (k `(,fn . ,t*))))
+      (c8normalize-name fn
+                        (lambda (t)
+                          (c8normalize-name* m*
+                                             (lambda (t*)
+                                               (k `(,t . ,t*))))))))
 
 
 
-        
+
+#|        
 (define (c8expr form)
   (cond ((c.scm:symbol? form)
          (c8vref form))
@@ -195,4 +240,4 @@
       (cons (c8expr (car args))
             (c8args (cdr args)))))
 
-
+|#
