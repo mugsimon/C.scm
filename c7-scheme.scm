@@ -111,9 +111,17 @@
   `(begin ,@(map c7expr args)))
 
 (define (c7lambda args)
-  (let ((params (car args))
+  (let ((params (c7params (car args)))
         (body (cadr args)))
     (list 'lambda params (c7expr body))))
+
+(define (c7params params)
+  (cond ((null? params)
+         '())
+        ((c.scm:var? params)
+         (var-name params))
+        (else
+         (cons (var-name (car params)) (c7params (cdr params))))))
 
 (define (c7let args)
   (if (c.scm:var? (car args))
@@ -121,13 +129,13 @@
       (let loop ((defs (car args))
                  (cdefs '()))
         (cond ((null? defs)
-               `(let ,(reverse cdefs) ,(c7expr (cadr args)))))
+               `(let ,(reverse cdefs) ,(c7expr (cadr args))))
               (else
                (let ((def (car defs)))
                  (loop (cdr defs)
                        (cons (list (var-name (car def))
                                    (c7expr (cadr def)))
-                             cdefs)))))))
+                             cdefs))))))))
 
 (define (c7named-let args)
   (let loop ((defs (cadr args))
@@ -147,14 +155,14 @@
   (let loop ((defs (car args))
              (cdefs '()))
     (cond ((null? defs)
-           `(letrec ,(reverse cdefs) ,(c7expr (cadr args)))))
+           `(letrec ,(reverse cdefs) ,(c7expr (cadr args))))
           (else
            (let ((var (caar defs))
                  (form (cadar defs)))
              (loop (cdr defs)
                    (cons (list (var-name var)
                                (c7expr form))
-                         cdefs))))))
+                         cdefs)))))))
 
 (define (c7set! args)
   (if (c.scm:var? (car args))
@@ -165,7 +173,7 @@
   `(quote ,@args))
 
 (define (c7symbol-fun fun args)
-  (if (c.scm:var? (car args))
+  (if (c.scm:var? fun)
       `(,(var-name fun) ,@(c7args args))
       `(,fun ,@(c7args args))))
 
