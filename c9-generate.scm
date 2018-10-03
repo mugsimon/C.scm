@@ -1,29 +1,57 @@
-;; A-Normal-Formへの変更を行う
+;; A-Normal-FormのSchemeを受け取り、Cコードの文字列のリストを返す
+
+(define c9cscm "CSCM")
+(define c9make-number "CSCM_MAKE_NUMBER")
+(define c9+ "CSCM_PLUS")
+(define c9- "CSCM_MINUS")
+(define c9* "CSCM_TIMES")
+(define c9= "CSCM_EQUAL")
+(define c9< "CSCM_LESS")
+(define c9> "CSCM_GREATER")
+(define c9car "CSCM_CAR")
+(define c9cdr "CSCM_CDR")
+(define c9cons "CSCM_CONS")
+(define c9pair? "CSCM_PAIR_P")
+
+(define c9*output-port* (current-output-port))
+
+(define (c9print . a)
+  (let loop ((a a))
+    (cond ((null? a)
+	   (newline c9*output-port*))
+	  (else
+	   (display (car a) c9*output-port*)
+	   (loop (cdr a))))))
+
+(define (c9display . a)
+  (let loop ((a a))
+    (cond ((null? a))
+	  (else
+	   (display (car a) c9*output-port*)
+	   (loop (cdr a))))))
+
 ;; (define var (lambda params body))
 ;; (define var expr)
-;; (begin ...)
-;; (fun ...)
 ;; sexp
-(define (c.scm:c8anf x)
+(define (c.scm:c8generate x)
      (if (pair? x)
          (case (car x)
            ((define)
             (let ((form (caddr x)))
               (if (and (pair? form)
                        (eq? (car form) 'lambda))
-                  (c.scm:c8anf-function (car x) ;; define
-                                            (cadr x) ;; name
-                                            (caddr x)) ;; (lambda params body)
-                  `(,(car x) ,(cadr x) ,(c.scm:c8anf-expr form)))))
-           ((begin)
-            `(begin ,@(map c.scm:c8anf (cdr x))))
+                  (c.scm:c8generate-function (car x) ;; define
+                                             (cadr x) ;; name
+                                             (caddr x)) ;; (lambda params body)
+                  (begin (c9display c9cscm " " (cadr x) " = ")
+                         (c.scm:c9generate-expr form))))))
            (else
-            (c.scm:c8anf-expr x)))
-         (c.scm:c8anf-expr x)))
+            ))))
 
-(define (c.scm:c8anf-function first name lambda-expr)
+(define (c.scm:c9generate-function first name lambda-expr)
+  (c9display 
   (let ((x (c8expr lambda-expr)))
-    `(,first ,name ,x)))
+    `(,(stringc9cscm ,name ,x)
 
 ;; form->expr
 (define (c.scm:c8anf-expr form)
