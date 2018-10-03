@@ -55,9 +55,31 @@
 
 (define (c8normalize m k)
   (cond ((pair? m)
-         (case (car m)
-           ((lambda) (c8lambda m k))))))
+         (let ((fun (car form))
+               (args (cdr form)))
+           (cond ((symbol? fun)
+                  (case fun
+                    ((lambda) (c8lambda args k))
+                    ((let) (c8let args k))
+                    ((let*) (c8let* args k))
+                    ((if) (c8if args k))
+                    ((set!) (c8set! args k))
+           ;;;;;;;;;;;;;;;;;;;;;;;;;;
+                    ((begin) (c8begin args k))
+                    ((delay) (c8delay args k))
+                    ((letrec) (c8letrec args k))
+                    ((quote) (c8quote args))
+                    (else
+                     (c8symbol-fun fun args k))))
+                 (else
+                  `(,(c8normalize fun) ,@(c8args args))))))
+        (else
+         (k m))))
 
+
+
+
+        
 (define (c8expr form)
   (cond ((c.scm:symbol? form)
          (c8vref form))
