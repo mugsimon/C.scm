@@ -10,7 +10,7 @@
             (let ((form (caddr x)))
               (if (and (pair? form)
                        (eq? (car form) 'lambda))
-                  (c.scm:c7hoist-function (car x) ;; define
+                  (c.scm:c7scheme-function (car x) ;; define
                                             (cadr x) ;; name
                                             (caddr x)) ;; (lambda params body)
                   `(,(car x) ,(cadr x) ,(c.scm:c7scheme-expr form)))))
