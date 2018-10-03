@@ -129,7 +129,8 @@
     (list 'lambda (c.scm:union (if (null? free-vars)
                                    '()
                                    (car free-vars))
-                               params) (c4expr body))))
+                               params)
+          (c4expr body))))
 
 (define (c4let args)
   (if (c.scm:var? (car form))

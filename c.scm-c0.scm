@@ -77,7 +77,7 @@
       (char? x)
       (string? x)))
 
-(define *newvar-name* "c.scm:")
+(define *newvar-name* "c.scm")
 (define *newvar* 0)
 (define (newvar . name)
   (set! *newvar* (+ *newvar* 1))
