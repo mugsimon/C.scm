@@ -89,7 +89,7 @@
 ;; 各パスをロード
 (load "c.scm-c0.scm")
 (load "c.scm-c1.scm")
-(load "c3-noramlize.scm")
+(load "c3-normalize.scm")
 (load "c4-close.scm")
 (load "c5-hoist.scm")
 (load "c6-lambda.scm")
@@ -100,8 +100,17 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 最初の入力に続く入力の関数を順番に適用した結果を返す
 (define (apply-funs x . funs)
-  (if (null? funs)
-      x
-      (apply-funs ((car funs) x) (cdr funs))))
+  (let loop ((x x)
+             (funs funs))
+    (if (null? funs)
+        x
+        (loop ((car funs) x) (cdr funs)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(define (c.scm:compile input)
+  (let ((x (apply-funs input c.scm:c0transform c.scm:c1 c.scm:c3normalize c.scm:c4close)))
+    (dlet ((c.scm:*c5local-functions* '()))
+          (set! x (c.scm:c5hoist x))
+          #;(car c.scm:*c5local-functions*))))
+
+
