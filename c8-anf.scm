@@ -1,3 +1,4 @@
+;; A-Normal-Formへの変更を行う
 ;; (define var (lambda params body))
 ;; (define var expr)
 ;; (begin ...)
