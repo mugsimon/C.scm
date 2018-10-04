@@ -21,7 +21,10 @@
          (c.scm:c7scheme-expr x)))
 
 (define (c.scm:c7scheme-function first name lambda-expr)
-  (let ((x (c7expr lambda-expr)))
+  (let ((x (c7expr lambda-expr))
+        (name (if (c.scm:var? name)
+                  (var-name name)
+                  name)))
     `(,first ,name ,x)))
 
 ;; form->expr

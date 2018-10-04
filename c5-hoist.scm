@@ -165,7 +165,7 @@
                          cdefs)))))))
 
 (define (c5hoist-fun def)
-  (set! c.scm:*c5local-functions* (cons def c.scm:*c5local-functions*)))
+  (set! c.scm:*c5local-functions* (cons (cons 'define def) c.scm:*c5local-functions*)))
 
 (define (c5letrec args)
   (let loop ((defs (car args))
