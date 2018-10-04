@@ -111,6 +111,6 @@
   (let ((x (apply-funs input c.scm:c0transform c.scm:c1 c.scm:c3normalize c.scm:c4close)))
     (dlet ((c.scm:*c5local-functions* '()))
           (set! x (c.scm:c5hoist x))
-          #;(car c.scm:*c5local-functions*))))
+          (car c.scm:*c5local-functions*))))
 
 
