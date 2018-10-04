@@ -42,18 +42,6 @@
             (c.scm:c0compile-expr x))) ;; (expr ...)
          (c.scm:c0compile-expr x))))) ;; atom
 
-;; マクロ
-(define-syntax dolist
-  (syntax-rules ()
-    ((dolist (var lst) body ...)
-     (let loop ((rest lst))
-       (cond ((null? rest)
-              '())
-             (else
-              (let ((var (car rest)))
-                (begin body ...)
-                (loop (cdr rest)))))))))
-
 ;; first->define
 ;; args->(var params)|(var . param)
 ;; body->expr
@@ -68,24 +56,6 @@
 (define (c.scm:c0compile-expr form)
   (let ((x (c0expr form)))
     x))
-
-;; 自己評価的データなら#tを返す
-;; x->expr
-(define (c.scm:self-eval? x)
-  (or (boolean? x)
-      (number? x)
-      (char? x)
-      (string? x)))
-
-(define *newvar-name* "c.scm")
-(define *newvar* 0)
-(define (newvar . name)
-  (set! *newvar* (+ *newvar* 1))
-  (if (null? name)
-      (string->symbol
-       (string-append *newvar-name* (number->string *newvar*)))	 
-      (string->symbol
-       (string-append (car name) (number->string *newvar*)))))
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Intrinsic constants
 (define (c0constant x)

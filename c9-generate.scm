@@ -58,16 +58,6 @@
                             (cons 'cons "CSCM_CONS")
                             (cons 'pair? "CSCM_PAIR_P")))
 (define c9*special* '(define set! lambda if quote and or let let* letrec begin delay))
-(define *newvar-name* "c.scm")
-(define *newvar* 0)
-(define (newvar . name)
-  (set! *newvar* (+ *newvar* 1))
-  (if (null? name)
-      (string->symbol
-       (string-append *newvar-name* (number->string *newvar*)))	 
-      (string->symbol
-       (string-append (car name) (number->string *newvar*)))))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (c9primop? fn)
   (memq fn c9*primitive*))
