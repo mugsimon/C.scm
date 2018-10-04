@@ -107,10 +107,26 @@
         (loop ((car funs) x) (cdr funs)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(define (c.scm:compile input)
+(define c.scm:*scheme-port* (current-output-port))
+(define c.scm:*c-port* (current-output-port))
+(set! c9*output-port* c.scm:*c-port*)
+(define (c.scm:compile-sexp input)
   (let ((x (apply-funs input c.scm:c0transform c.scm:c1 c.scm:c3normalize c.scm:c4close)))
     (dlet ((c.scm:*c5local-functions* '()))
           (set! x (c.scm:c5hoist x))
-          (car c.scm:*c5local-functions*))))
-
+          (if (c.scm:c6raw-lambda x)
+              (begin (display (c.scm:c7scheme x) c.scm:*scheme-port*)
+                     (newline c.scm:*scheme-port*))
+              (begin (c.scm:c9generate (c.scm:c8anf (c.scm:c7scheme x)))
+                     (newline c.scm:*c-port*)))
+          (let loop ((local-funs c.scm:*c5local-functions*))
+            (if (null? local-funs)
+                #t
+                (let ((x (car local-funs)))
+                  (if (c.scm:c6raw-lambda x)
+                      (begin (display (c.scm:c7scheme x) c.scm:*scheme-port*)
+                             (newline c.scm:*scheme-port*))
+                      (begin (c.scm:c9generate (c.scm:c8anf (c.scm:c7scheme x)))
+                             (newline c.scm:*c-port*)))
+                  (loop (cdr local-funs))))))))
 

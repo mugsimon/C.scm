@@ -132,7 +132,7 @@
     (c9print "}")))
 
 (define (c9symbol-fun fun args r)
-  (if r (c9display "return "))
+  (if r (c9display "return ("))
   (c9expr fun #f)
   (c9display "(")
   (if (not (null? args))
@@ -144,15 +144,15 @@
                (c9display ", ")
                (loop (cdr args))))))
   (c9display ")")
-  (if r (c9print ";")))
+  (if r (c9print ");")))
 
 (define (c9symbol x r)
-  (cond ((memq x c9*primitive*)
-         (c9display (cdr (memq x c9*primitive*))))
+  (cond ((assq x c9*primitive*)
+         (c9display (cdr (assq x c9*primitive*))))
         (else
          (c9display x))))
 
 (define (c9number x r)
-  (if r (c9display "return "))
+  (if r (c9display "return ("))
   (c9display c9make-number "(" x ")")
-  (if r (c9display ";")))
+  (if r (c9display ");")))
