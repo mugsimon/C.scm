@@ -32,15 +32,6 @@
 
 (define c8*primitive* '(+ - * / = < > car cdr cons pair? list set-car! set-cdr! null? display not remainder memq member symbol? eq? cadr caddr append error map apply assoc))
 (define c8*special* '(define set! lambda if quote and or let let* letrec begin delay))
-(define *newvar-name* "c.scm")
-(define *newvar* 0)
-(define (newvar . name)
-  (set! *newvar* (+ *newvar* 1))
-  (if (null? name)
-      (string->symbol
-       (string-append *newvar-name* (number->string *newvar*)))	 
-      (string->symbol
-       (string-append (car name) (number->string *newvar*)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (c8primop? fn)

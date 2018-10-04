@@ -75,7 +75,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 新しい変数を用意する
 ;; c0transform, c8anfで使用
-(define *newvar-name* "c.scm")
+(define *newvar-name* "cscm")
 (define *newvar* 0)
 (define (newvar . name)
   (set! *newvar* (+ *newvar* 1))
@@ -98,7 +98,7 @@
 (load "c9-generate.scm")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;
-;; 最初の入力に続く入力の関数を順番に適用した結果を返す
+;; xにfunsを順番に適用した結果を返す
 (define (apply-funs x . funs)
   (let loop ((x x)
              (funs funs))
@@ -110,23 +110,22 @@
 (define c.scm:*scheme-port* (current-output-port))
 (define c.scm:*c-port* (current-output-port))
 (set! c9*output-port* c.scm:*c-port*)
+
 (define (c.scm:compile-sexp input)
   (let ((x (apply-funs input c.scm:c0transform c.scm:c1 c.scm:c3normalize c.scm:c4close)))
     (dlet ((c.scm:*c5local-functions* '()))
           (set! x (c.scm:c5hoist x))
-          (if (c.scm:c6raw-lambda x)
-              (begin (display (c.scm:c7scheme x) c.scm:*scheme-port*)
-                     (newline c.scm:*scheme-port*))
-              (begin (c.scm:c9generate (c.scm:c8anf (c.scm:c7scheme x)))
-                     (newline c.scm:*c-port*)))
+          (c.scm:generate-code x)
           (let loop ((local-funs c.scm:*c5local-functions*))
             (if (null? local-funs)
                 #t
-                (let ((x (car local-funs)))
-                  (if (c.scm:c6raw-lambda x)
-                      (begin (display (c.scm:c7scheme x) c.scm:*scheme-port*)
-                             (newline c.scm:*scheme-port*))
-                      (begin (c.scm:c9generate (c.scm:c8anf (c.scm:c7scheme x)))
-                             (newline c.scm:*c-port*)))
-                  (loop (cdr local-funs))))))))
+                (begin (c.scm:generate-code (car local-funs))
+                       (loop (cdr local-funs))))))))
+
+(define (c.scm:generate-code x)
+  (if (c.scm:c6raw-lambda x)
+              (begin (display (c.scm:c7scheme x) c.scm:*scheme-port*)
+                     (newline c.scm:*scheme-port*))
+              (begin (c.scm:c9generate (c.scm:c8anf (c.scm:c7scheme x)))
+                     (newline c.scm:*c-port*))))
 

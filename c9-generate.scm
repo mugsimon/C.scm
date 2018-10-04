@@ -110,10 +110,10 @@
     (c9print "}")))
 
 (define (c9let args r)
-  (let ((def (car args)))
+  (let ((def (caar args)))
     (let ((var (car def))
           (val (cadr def))
-          (m (caddr def)))
+          (m (cadr args)))
       (c9display c9cscm " " var " = ")
       (c9expr val #f)
       (c9print ";")
