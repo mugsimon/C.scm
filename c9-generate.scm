@@ -104,7 +104,7 @@
                  (c9display c9cscm " " (car params)))
                 (else
                  (c9display c9cscm " " (car params) ", ")
-                 (loop (cdr vars))))))
+                 (loop (cdr params))))))
     (c9print "){")
     (c9expr body #t)
     (c9print "}")))
@@ -150,7 +150,7 @@
   (cond ((memq x c9*primitive*)
          (c9display (cdr (memq x c9*primitive*))))
         (else
-         x)))
+         (c9display x))))
 
 (define (c9number x r)
   (if r (c9display "return "))
