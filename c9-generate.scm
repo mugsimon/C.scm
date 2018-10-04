@@ -1,6 +1,7 @@
 ;; A-Normal-FormのSchemeを受け取り、Cコードの文字列のリストを返す
 
 (define c9cscm "CSCM")
+(define c9void "CSCM_VOID")
 (define c9make-number "CSCM_MAKE_NUMBER")
 (define c9+ "CSCM_PLUS")
 (define c9- "CSCM_MINUS")
@@ -49,14 +50,12 @@
             ))))
 
 (define (c.scm:c9generate-function first name lambda-expr)
-  (c9display 
-  (let ((x (c8expr lambda-expr)))
-    `(,(stringc9cscm ,name ,x)
+  (c9display c9cscm " " name)
+  (c9expr lambda-expr))
 
 ;; form->expr
-(define (c.scm:c8anf-expr form)
-  (let ((x (c8expr form)))
-    x))
+(define (c.scm:c9generate-expr form)
+  (c9expr lambda-expr))
 
 (define c8*primitive* '(+ - * / = < > car cdr cons pair? list set-car! set-cdr! null? display not remainder memq member symbol? eq? cadr caddr append error map apply assoc))
 (define c8*special* '(define set! lambda if quote and or let let* letrec begin delay))
@@ -78,6 +77,72 @@
   (if (pair? n)
       (memq (car n) c8*special*)
       #t))
+
+(define (c9expr form)
+  (cond ((pair? m)
+         (let ((fun (car form))
+               (args (cdr form)))
+           (cond ((symbol? fun)
+                  (case fun
+                    ((lambda) (c9lambda args))
+                    ((let) (c9let args))
+                    ((if) (c9if args))
+                    (else (c9symbol-fun fun args)))))))))
+
+(define (c9lambda args)
+  (c9display "(")
+  (let ((params (car args))
+        (body (cadr args)))
+    (if (null? params)
+        (c9display c9void)
+        (let loop ((params params))
+          (cond ((null? (cdr params))
+                 (c9display c9cscm " " (car params)))
+                (else
+                 (c9display c9cscm " " (car params) ", ")
+                 (loop (cdr vars))))))
+    (c9print "){")
+    (c9expr body)
+    (c9print "}")))
+
+(define (c9let args)
+  (let ((def (car args)))
+    (let ((var (car def))
+          (val (cadr def))
+          (m (caddr def)))
+      (c9display c9cscm " " var " = ")
+      (c9expr val)
+      (c9print ";")
+      (c9expr m))))
+
+(define (c9if args)
+  (let ((m1 (car args))
+        (m2 (cadr args))
+        (m3 (caddr args)))
+    (c9display "if (")
+    (c9expr m1)
+    (c9print ") {")
+    (c9expr m2)
+    (c9print "} else {")
+    (c9expr m3)
+    (c9print "}")))
+
+(define (c9symbol-fun fun args))
+
+                 
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 (define (c8normalize-term m)
   (c8normalize m (lambda (x) x)))
