@@ -115,7 +115,7 @@
   (let ((m1 (car args))
         (m2 (cadr args))
         (m3 (caddr args)))
-    (c9display "if (" c9nfalsp "(")
+    (c9display "if (" c9nfalsep "(")
     (c9expr m1 #f)
     (c9print ")) {")
     (c9expr m2 #t)
