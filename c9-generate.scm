@@ -3,6 +3,7 @@
 (define c9cscm "CSCM")
 (define c9void "CSCM_VOID")
 (define c9make-number "CSCM_MAKE_NUMBER")
+(define c9nfalsep "CSCM_NFALSEP")
 
 (define c9*output-port* (current-output-port))
 
@@ -114,9 +115,9 @@
   (let ((m1 (car args))
         (m2 (cadr args))
         (m3 (caddr args)))
-    (c9display "if (")
+    (c9display "if (" c9nfalsp "(")
     (c9expr m1 #f)
-    (c9print ") {")
+    (c9print ")) {")
     (c9expr m2 #t)
     (c9print "} else {")
     (c9expr m3 #t)

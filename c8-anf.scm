@@ -1,8 +1,6 @@
 ;; A-Normal-Formへの変更を行う
 ;; (define var (lambda params body))
 ;; (define var expr)
-;; (begin ...)
-;; (fun ...)
 ;; sexp
 (define (c.scm:c8anf x)
   (if (pair? x)
