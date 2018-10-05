@@ -61,9 +61,22 @@
   name)
 
 (define (c3if args)
-  `(if ,(c3expr (car args))
+  `(if ,(c3fmla (car args))
        ,(c3expr (cadr args))
        ,(c3expr (caddr args))))
+
+(define (c3fmla fmla)
+  (if (c.scm:pair? fmla)
+      (case (car fmla)
+        ((and)
+         (cons 'and (c3map c3fmla (cdr fmla))))
+        ((or)
+         (cons 'or (c3map c3fmla (cdr fmla))))
+        ((not)
+         (list 'not (c3fmla (cadr fmla))))
+        (else
+         (c3expr fmla)))
+      (c3expr fmla)))
 
 (define (c3and args)
   `(and ,@(c3args (car args))))
