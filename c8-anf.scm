@@ -15,8 +15,6 @@
                                      (cadr x) ;; name
                                      (caddr x)) ;; (lambda params body)
                `(,(car x) ,(cadr x) ,(c.scm:c8anf-expr form)))))
-        ((begin)
-         `(begin ,@(map c.scm:c8anf (cdr x))))
         (else
          (c.scm:c8anf-expr x)))
       (c.scm:c8anf-expr x)))
@@ -58,7 +56,7 @@
                     ((set!) (c8set! args k))
                     ;;;;;;;;;;;;;;;;;;;;;;;;;;
                     ((begin) (c8begin args k))
-                    ((delay) (c8delay args k))
+                    #;((delay) (c8delay args k))
                     ((letrec) (c8letrec args k))
                     ((quote) (c8quote args))
                     (else
@@ -117,10 +115,10 @@
 (define (c8set! args k)
   (let ((x (car args))
         (m (cadr args)))
-    (c8normalize-name m
-                      (lambda (t)
-                        `(let ((,(newvar "cscm:set!") (set! ,x ,t)))
-                           ,(k x))))))
+    (c8normalize m
+                 (lambda (t)
+                   `(let ((,x ,t))
+                      ,(k x))))))
 
 (define (c8symbol-fun fn m* k)
   (if (c8primop? fn)
@@ -131,7 +129,14 @@
                         (lambda (t)
                           (c8normalize-name* m*
                                              (lambda (t*)
-                                               (k `(,t . ,t*))))))))
+                                               (k `(,t . ,t*))))))))                 
+
+(define (c8begin args k)
+  (if (null? (cdr args))
+      (c8normalize (car args) k)
+      (c8normalize-name (car args)
+                        (lambda (t)
+                          (c8normalize `(begin ,@(cdr args)) k)))))
 
 (define (c8normalize-name m k)
   (c8normalize m (lambda (n)
