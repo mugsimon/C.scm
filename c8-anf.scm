@@ -137,6 +137,17 @@
                         (lambda (t)
                           (c8normalize `(begin ,@(cdr args)) k)))))
 
+(define (c8letrec args k)
+  (let ((defs (car args))
+        (body (cadr args)))
+    (if (null? defs)
+        (c8normalize body k)
+        (let ((vars (map car defs))
+              (exps (map cadr defs)))
+          (c8normalize `(let* ,(map list vars (make-list (length vars) #f))
+                          `(begin ,(map list (make-list (length vars) 'set!) vars exps)
+                                  ,body)))))))
+
 (define (c8normalize-name m k)
   (c8normalize m (lambda (n)
                    (if (c8value? n)
