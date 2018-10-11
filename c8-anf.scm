@@ -114,10 +114,10 @@
 (define (c8set! args k)
   (let ((x (car args))
         (m (cadr args)))
-    (c8normalize m
-                 (lambda (t)
-                   `(let ((,x ,t))
-                      ,(k x))))))
+    (c8normalize-name m
+                      (lambda (t)
+                        `(let ((,(newvar "set!_") (set! ,x ,t)))
+                           ,(k x))))))
 
 (define (c8symbol-fun fn m* k)
   (if (c8primop? fn)
@@ -145,8 +145,9 @@
         (let ((vars (map car defs))
               (exps (map cadr defs)))
           (c8normalize `(let* ,(map list vars (make-list (length vars) #f))
-                          `(begin ,(map list (make-list (length vars) 'set!) vars exps)
-                                  ,body)))))))
+                          (begin ,(map list (make-list (length vars) 'set!) vars exps)
+                                 ,body))
+                       k)))))
 
 (define (c8normalize-name m k)
   (c8normalize m (lambda (n)
