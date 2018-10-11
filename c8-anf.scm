@@ -56,7 +56,7 @@
                     ((begin) (c8begin args k))
                     #;((delay) (c8delay args k))
                     ((letrec) (c8letrec args k))
-                    ((quote) (c8quote args))
+                    #;((quote) (c8quote args k))
                     (else
                      (c8symbol-fun fun args k))))
                  (else
@@ -149,8 +149,8 @@
                                  ,body))
                        k)))))
 
-(define (c8quote args k)
-  (k args))
+#;(define (c8quote args k)
+  (k `(quote ,@args)))
 
 (define (c8normalize-name m k)
   (c8normalize m (lambda (n)
