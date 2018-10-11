@@ -3,6 +3,7 @@
 (define c9cscm "CSCM")
 (define c9void "CSCM_VOID")
 (define c9make-number "CSCM_MAKE_NUMBER")
+(define c9nfalsep "CSCM_NFALSEP")
 
 (define c9*output-port* (current-output-port))
 
@@ -56,18 +57,9 @@
                             (cons 'car "CSCM_CAR")
                             (cons 'cdr "CSCM_CDR")
                             (cons 'cons "CSCM_CONS")
-                            (cons 'pair? "CSCM_PAIR_P")))
+                            (cons 'pair? "CSCM_PAIR_P")
+                            (cons 'not "CSCM_NOT")))
 (define c9*special* '(define set! lambda if quote and or let let* letrec begin delay))
-(define *newvar-name* "c.scm")
-(define *newvar* 0)
-(define (newvar . name)
-  (set! *newvar* (+ *newvar* 1))
-  (if (null? name)
-      (string->symbol
-       (string-append *newvar-name* (number->string *newvar*)))	 
-      (string->symbol
-       (string-append (car name) (number->string *newvar*)))))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (c9primop? fn)
   (memq fn c9*primitive*))
@@ -123,9 +115,9 @@
   (let ((m1 (car args))
         (m2 (cadr args))
         (m3 (caddr args)))
-    (c9display "if (")
+    (c9display "if (" c9nfalsep "(")
     (c9expr m1 #f)
-    (c9print ") {")
+    (c9print ")) {")
     (c9expr m2 #t)
     (c9print "} else {")
     (c9expr m3 #t)
@@ -150,7 +142,9 @@
   (cond ((assq x c9*primitive*)
          (c9display (cdr (assq x c9*primitive*))))
         (else
-         (c9display x))))
+         (if r (c9display "return ("))
+         (c9display x)
+         (if r (c9print ");")))))
 
 (define (c9number x r)
   (if r (c9display "return ("))

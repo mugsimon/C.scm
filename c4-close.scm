@@ -32,53 +32,6 @@
   (let ((x (c4expr form)))
     x))
 
-(define (c.scm:symbol? x)
-  (or (c.scm:var? x)
-      (symbol? x)))
-
-(define (c.scm:pair? x)
-  (and (not (c.scm:var? x))
-       (pair? x)))
-
-(define (c.scm:var? x)
-  (and (list? x)
-       (= (length x) 7)
-       (symbol? (var-name x))
-       (boolean? (var-funarg x))
-       (boolean? (var-assigned x))
-       (boolean? (var-closed x))
-       (or (boolean? (var-local-fun x))
-           (list? (var-local-fun x)))
-       (list? (var-local-fun-args x))
-       (list? (var-loc x))))
-
-(define-syntax dolist
-  (syntax-rules ()
-    ((dolist (var lst) body ...)
-     (let loop ((rest lst))
-       (cond ((null? rest)
-              '())
-             (else
-              (let ((var (car rest)))
-                (begin body ...)
-                (loop (cdr rest)))))))))
-
-(define (c.scm:union x y)
-  (cond ((null? x)
-         y)
-        ((member (car x) y)
-         (c.scm:union (cdr x) y))
-        (else
-         (cons (car x) (c.scm:union (cdr x) y)))))
-
-(define (c.scm:difference x y)
-  (cond ((null? x)
-         '())
-        ((member (car x) y)
-         (c.scm:difference (cdr x) y))
-        (else
-         (cons (car x) (c.scm:difference (cdr x) y)))))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (c4expr form)
   (cond ((c.scm:pair? form)

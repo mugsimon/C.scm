@@ -30,25 +30,6 @@
 (define (c.scm:c3normalize-expr form)
   (c3expr form))
 
-(define (c.scm:symbol? x)
-  (or (c.scm:var? x)
-      (symbol? x)))
-
-(define (c.scm:pair? x)
-  (and (not (c.scm:var? x))
-       (pair? x)))
-
-(define (c.scm:var? x)
-  (and (list? x)
-       (= (length x) 7)
-       (symbol? (var-name x))
-       (boolean? (var-funarg x))
-       (boolean? (var-assigned x))
-       (boolean? (var-closed x))
-       (or (boolean? (var-local-fun x))
-           (list? (var-local-fun x)))
-       (list? (var-local-fun-args x))
-       (list? (var-loc x))))  
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (c3expr form)
   (cond ((c.scm:symbol? form)
@@ -80,9 +61,22 @@
   name)
 
 (define (c3if args)
-  `(if ,(c3expr (car args))
+  `(if ,(c3fmla (car args))
        ,(c3expr (cadr args))
        ,(c3expr (caddr args))))
+
+(define (c3fmla fmla)
+  (if (c.scm:pair? fmla)
+      (case (car fmla)
+        ((and)
+         (cons 'and (c3map c3fmla (cdr fmla))))
+        ((or)
+         (cons 'or (c3map c3fmla (cdr fmla))))
+        ((not)
+         (list 'not (c3fmla (cadr fmla))))
+        (else
+         (c3expr fmla)))
+      (c3expr fmla)))
 
 (define (c3and args)
   `(and ,@(c3args (car args))))
