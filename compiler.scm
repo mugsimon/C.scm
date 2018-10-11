@@ -96,6 +96,7 @@
 (load "c7-scheme.scm")
 (load "c8-anf.scm")
 (load "c9-generate.scm")
+(load "c10-expand-or-and.scm")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;
 ;; xにfunsを順番に適用した結果を返す
@@ -126,6 +127,6 @@
   (if (c.scm:c6raw-lambda x)
               (begin (display (c.scm:c7scheme x) c.scm:*scheme-port*)
                      (newline c.scm:*scheme-port*))
-              (begin (c.scm:c9generate (c.scm:c8anf (c.scm:c7scheme x)))
+              (begin (c.scm:c9generate (apply-funs x c.scm:c7scheme c.scm:c10expand-or-and c.scm:c8anf))
                      (newline c.scm:*c-port*))))
 
