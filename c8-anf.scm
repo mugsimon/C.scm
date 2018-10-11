@@ -149,6 +149,9 @@
                                  ,body))
                        k)))))
 
+(define (c8quote args k)
+  (k args))
+
 (define (c8normalize-name m k)
   (c8normalize m (lambda (n)
                    (if (c8value? n)
