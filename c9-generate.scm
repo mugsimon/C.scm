@@ -4,6 +4,9 @@
 (define c9void "CSCM_VOID")
 (define c9make-number "CSCM_MAKE_NUMBER")
 (define c9nfalsep "CSCM_NFALSEP")
+(define c9true "CSCM_TRUE")
+(define c9false "CSCM_FALSE")
+(define c9nil "CSCM_NIL")
 
 (define c9*output-port* (current-output-port))
 
@@ -85,7 +88,11 @@
          (cond ((symbol? form)
                 (c9symbol form r))
                ((number? form)
-                (c9number form r))))))
+                (c9number form r))
+               ((boolean? form)
+                (c9boolean form r))
+               ((null? form)
+                (c9null form r))))))
 
 (define (c9lambda args r)
   (c9display "(")
@@ -150,5 +157,18 @@
 
 (define (c9number x r)
   (if r (c9display "return ("))
-  (c9display c9make-number "(" x ")")
-  (if r (c9display ");")))
+  (c9display c9make-number x)
+  (if r (c9print ");")))
+
+(define (c9boolean x r)
+  (if r (c9display "return ("))
+  (let ((b (if x
+               c9true
+               c9false)))
+    (c9display b))
+  (if r (c9print ");")))
+
+(define (c9null x r)
+  (if r (c9display "return ("))
+  (c9display c9nil)
+  (if r (c9print ");")))
