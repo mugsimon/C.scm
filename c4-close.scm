@@ -46,7 +46,7 @@
                     ((lambda) (c4lambda args))
                     ((delay) (c4delay args))
                     ((let) (c4let args))
-                    ((let*) (c4let args))
+                    ((let*) (c4let* args))
                     ((letrec) (c4letrec args))
                     ((set!) (c4set! args))
                     ((quote) (c4quote args))
@@ -86,8 +86,8 @@
           (c4expr body))))
 
 (define (c4let args)
-  (if (c.scm:var? (car form))
-      (c4named-let form)     
+  (if (c.scm:var? (car args))
+      (c4named-let args)     
       (let loop ((defs (car args))
                  (cdefs '()))
         (cond ((null? defs)
@@ -96,6 +96,16 @@
            (loop (cdr defs)
                  (cons (c4def (car defs))
                        cdefs)))))))
+
+(define (c4let* args)
+  (let loop ((defs (car args))
+             (cdefs '()))
+    (cond ((null? defs)
+           `(let* ,(reverse cdefs) ,(c4expr (cadr args))))
+          (else
+           (loop (cdr defs)
+                 (cons (c4def (car defs))
+                       cdefs))))))
   
 (define (c4def def)
   (let ((var (car def))
