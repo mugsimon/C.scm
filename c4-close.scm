@@ -124,7 +124,7 @@
                  (cons (c4def (car defs))
                        cdefs))))))
 
-(define (c4named-let args)
+#;(define (c4named-let args)
   (let loop ((defs (cadr args))
              (cdefs '()))
     (cond ((null? defs)
