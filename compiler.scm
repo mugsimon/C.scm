@@ -97,6 +97,7 @@
 (load "c8-anf.scm")
 (load "c9-generate.scm")
 (load "c10-expand-or-and.scm")
+(load "c11-expand-namedlet.scm")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;
 ;; xにfunsを順番に適用した結果を返す
@@ -113,7 +114,7 @@
 (set! c9*output-port* c.scm:*c-port*)
 
 (define (c.scm:compile-sexp input)
-  (let ((x (apply-funs input c.scm:c0transform c.scm:c1 c.scm:c3normalize c.scm:c4close)))
+  (let ((x (apply-funs input c.scm:c0transform c.scm:c11expand-namedlet c.scm:c1 c.scm:c3normalize c.scm:c4close)))
     (dlet ((c.scm:*c5local-functions* '()))
           (set! x (c.scm:c5hoist x))
           (c.scm:generate-code x)
