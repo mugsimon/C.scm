@@ -53,7 +53,9 @@
                     (else
                      (c3symbol-fun fun args))))
                  (else
-                  `(,(c3expr fun) ,@(c3args (car args)))))))
+                  (if (null? args)
+                      `(,(c3expr fun))
+                      `(,(c3expr fun) ,@(c3args (car args))))))))
         (else
          form)))
 
@@ -69,9 +71,9 @@
   (if (c.scm:pair? fmla)
       (case (car fmla)
         ((and)
-         (cons 'and (c3map c3fmla (cdr fmla))))
+         (cons 'and (map c3fmla (cdr fmla))))
         ((or)
-         (cons 'or (c3map c3fmla (cdr fmla))))
+         (cons 'or (map c3fmla (cdr fmla))))
         ((not)
          (list 'not (c3fmla (cadr fmla))))
         (else
@@ -85,7 +87,7 @@
   `(or ,@(c3args (car args))))
 
 (define (c3begin args)
-  `(begin ,@(c3map c3expr args)))
+  `(begin ,@(map c3expr (car args))))
 
 (define (c3lambda args)
   (let ((requireds (cadr args))
