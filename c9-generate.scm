@@ -85,6 +85,7 @@
                     ((lambda) (c9lambda args r))
                     ((let) (c9let args r))
                     ((if) (c9if args r))
+                    ((quote) (c9quote args r))
                     (else (c9symbol-fun fun args r)))))))
         (else
          (cond ((symbol? form)
@@ -174,3 +175,6 @@
   (if r (c9display "return ("))
   (c9display c9nil)
   (if r (c9print ");")))
+
+(define (c9quote x r)
+  (c9expr (car x) r))
