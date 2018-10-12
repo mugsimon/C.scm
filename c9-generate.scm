@@ -58,7 +58,9 @@
                             (cons 'cdr "CSCM_CDR")
                             (cons 'cons "CSCM_CONS")
                             (cons 'pair? "CSCM_PAIR_P")
-                            (cons 'not "CSCM_NOT")))
+                            (cons 'not "CSCM_NOT")
+                            (cons 'null? "CSCM_NULL_P")
+                            (cons 'eq? "CSCM_EQ_P")))
 (define c9*special* '(define set! lambda if quote and or let let* letrec begin delay))
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (c9primop? fn)
