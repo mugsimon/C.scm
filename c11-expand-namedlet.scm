@@ -23,6 +23,7 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (c11expr form)
+  (print "c.scm:debug, c11expr, form -> " form) ;; debug
   (cond ((pair? form)
          (let ((fun (car form))
                (args (cdr form)))
@@ -110,8 +111,8 @@
 (define (c11letrec args)
   (let ((defs (car args))
         (body (c11expr (cadr args))))
-    (let ((vars (map car args))
-          (exps (map cadr args)))
+    (let ((vars (map car defs))
+          (exps (map cadr defs)))
       (let ((cexps (map c11expr exps)))
         (let ((cdefs (map list vars cexps)))
           (if (null? cdefs)
