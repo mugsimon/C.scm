@@ -87,6 +87,7 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 各パスをロード
+#|
 (load "c.scm-c0.scm")
 (load "c.scm-c1.scm")
 (load "c3-normalize.scm")
@@ -100,6 +101,20 @@
 (load "c11-expand-namedlet.scm")
 (load "c12-assign.scm")
 (load "c13-gc.scm")
+|#
+(load "~/c.scm/c.scm-c0.scm")
+(load "~/c.scm/c.scm-c1.scm")
+(load "~/c.scm/c3-normalize.scm")
+(load "~/c.scm/c4-close.scm")
+(load "~/c.scm/c5-hoist.scm")
+(load "~/c.scm/c6-lambda.scm")
+(load "~/c.scm/c7-scheme.scm")
+(load "~/c.scm/c8-anf.scm")
+(load "~/c.scm/c9-generate.scm")
+(load "~/c.scm/c10-expand-or-and.scm")
+(load "~/c.scm/c11-expand-namedlet.scm")
+(load "~/c.scm/c12-assign.scm")
+(load "~/c.scm/c13-gc.scm")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;
 ;; xにfunsを順番に適用した結果を返す
@@ -109,6 +124,19 @@
     (if (null? funs)
         x
         (loop ((car funs) x) (cdr funs)))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; ファイルのs式をリストにして返す
+(define (c.scm:expr-lst input)
+  (let ((iport (open-input-file input)))
+    (let loop ((expr (read iport))
+               (lst '()))
+      (cond ((eof-object? expr)
+             (close-input-port iport)
+             lst)
+            (else
+             (loop (read iport)
+                   (cons expr lst)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define c.scm:*scheme-port* (current-output-port))
