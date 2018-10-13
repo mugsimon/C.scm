@@ -23,7 +23,6 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (c11expr form)
-  (print "c.scm:debug, c11expr, form -> " form) ;; debug
   (cond ((pair? form)
          (let ((fun (car form))
                (args (cdr form)))
