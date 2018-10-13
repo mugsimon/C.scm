@@ -160,7 +160,7 @@
 
 (define (c9number x r)
   (if r (c9display "return ("))
-  (c9display c9make-number x)
+  (c9display c9make-number "(" x ")")
   (if r (c9print ");")))
 
 (define (c9boolean x r)
