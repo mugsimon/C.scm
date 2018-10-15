@@ -78,14 +78,6 @@
       (char? x)
       (string? x)))
 
-;; リストxからリストyの要素を取り除いたリストを返す
-(define (c.scm:difference x y)
-  (cond ((null? x)
-         '())
-        ((member (car x) y)
-         (c.scm:difference (cdr x) y))
-        (else
-         (cons (car x) (c.scm:difference (cdr x) y)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; SCTOPS  Compiler toplevel.

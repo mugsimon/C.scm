@@ -36,7 +36,7 @@
 (define (c.scm:union x y)
   (cond ((null? x)
          y)
-        ((member (car x) y)
+        ((c.scm:member (car x) y)
          (c.scm:union (cdr x) y))
         (else
          (cons (car x) (c.scm:union (cdr x) y)))))
@@ -45,10 +45,15 @@
 (define (c.scm:difference x y)
   (cond ((null? x)
          '())
-        ((member (car x) y)
+        ((c.scm:member (car x) y)
          (c.scm:difference (cdr x) y))
         (else
          (cons (car x) (c.scm:difference (cdr x) y)))))
+
+(define (c.scm:member elt lst)
+  (if (c.scm:var? elt)
+      (member (var-name elt) (map var-name lst))
+      (member elt lst)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; make-varを持つSchemeコードで使用する
