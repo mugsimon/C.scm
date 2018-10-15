@@ -55,6 +55,21 @@
       (member (var-name elt) (map var-name lst))
       (member elt lst)))
 
+;; リスト内の同じ要素を排除する
+;; make-varの場合はより新しい要素に置き換える
+(define (c.scm:reduction lst)
+  (let loop ((lst lst)
+             (rlst '()))
+    (cond ((null? lst)
+           (reverse rlst))
+          (else
+           (let ((elt (car lst)))
+             (let ((tmp (c.scm:member elt rlst)))
+               (if tmp
+                   (begin (set-car! tmp elt)
+                          (loop (cdr lst) rlst))
+                   (loop (cdr lst) (cons elt rlst)))))))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; make-varを持つSchemeコードで使用する
 (define (c.scm:symbol? x)
