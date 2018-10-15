@@ -52,7 +52,11 @@
 
 (define (c.scm:member elt lst)
   (if (c.scm:var? elt)
-      (member (var-name elt) (map var-name lst))
+      (member (var-name elt) (map (lambda (x)
+                                    (if (c.scm:var? x)
+                                        (var-name x)
+                                        x))
+                                  lst))
       (member elt lst)))
 
 ;; リスト内の同じ要素を排除する
