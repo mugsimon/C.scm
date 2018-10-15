@@ -163,3 +163,25 @@
               (begin (c.scm:c9generate (apply-funs x c.scm:c7scheme c.scm:c10expand-or-and c.scm:c8anf))
                      (newline c.scm:*c-port*))))
 
+;;;;;;;;;;;;;;;;;;;;;;
+(define (c.scm:expr-lst input)
+  (let ((iport (open-input-file input)))
+    (let loop ((expr (read iport))
+               (lst '()))
+      (cond ((eof-object? expr)
+             (close-input-port iport)
+             lst)
+            (else
+             (loop (read iport)
+                   (cons expr lst)))))))
+
+(define (c.scm:compile-file input)
+  (let ((exp-list (c.scm:expr-lst input)))
+    (dlet ((c.scm:*scheme-port* (open-output-file (string-append input ".scm")))
+           (c.scm:*c-port* (open-output-file (string-append input ".c"))))
+          (set! c9*output-port* c.scm:*c-port*)
+          (for-each c.scm:compile-sexp exp-list)
+          (close-output-port c.scm:*scheme-port*)
+          (close-output-port c.scm:*c-port*))
+    (set! c9*output-port* c.scm:*c-port*)))
+
