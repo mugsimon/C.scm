@@ -78,14 +78,6 @@
       (char? x)
       (string? x)))
 
-;; リストxからリストyの要素を取り除いたリストを返す
-(define (c.scm:difference x y)
-  (cond ((null? x)
-         '())
-        ((member (car x) y)
-         (c.scm:difference (cdr x) y))
-        (else
-         (cons (car x) (c.scm:difference (cdr x) y)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; SCTOPS  Compiler toplevel.
@@ -995,7 +987,8 @@
         (dolist (def defs)
                 (let ((var (car def))
                       (form (cdr def))
-                      (c.scm:free-vars (c.scm:difference *env* (map car defs)))) ;; c.scm この時点での自由変数
+                      (c.scm:free-vars (c.scm:difference (c.scm:difference *env* '(CB))
+                                                         (map car defs)))) ;; c.scm この時点での自由変数
             (if (and (pair? form) (eq? (car form) 'lambda #;'LAMBDA)) ;; c.scm
                 (if (or (var-funarg var) (var-assigned var) (var-closed var))
                     (set-cdr! def (c1lambda (cdr form)))
@@ -1003,8 +996,8 @@
                            (set-var-local-fun var #t)
                            (let ((requireds (cadr def)) ;; c.scm, #tの代わりに自由変数のリストをおく
                                  (rest (caddr def)))
-                             (set-var-local-fun var (reverse (c.scm:difference (c.scm:difference c.scm:free-vars requireds)
-                                                                               rest))))
+                             (set-var-local-fun var (c.scm:reduction (reverse (c.scm:difference (c.scm:difference c.scm:free-vars requireds)
+                                                                               rest)))))
                            (set-var-local-fun-args var (cdr def))))
                 (set-cdr! def (c1expr form)))))
         (list 'let #;c2let (reverse defs) body))))
@@ -1031,8 +1024,9 @@
                          (set-var-local-fun var #t)
                          (let ((requireds (cadr def)) ;; c.scm, #tの代わりに自由変数のリストをおく
                                (rest (caddr def)))
-                           (set-var-local-fun var (reverse (c.scm:difference (c.scm:difference *env* requireds)
-                                                                             rest))))
+                           (set-var-local-fun var (c.scm:reduction (reverse (c.scm:difference (c.scm:difference (c.scm:difference *env* '(CB))
+                                                                                                                requireds)
+                                                                             rest)))))
                          (set-var-local-fun-args var (cdr def))))
               (set-cdr! def (c1expr form))))))
     (list 'let* #;c2let* (reverse defs) body)))
@@ -1041,31 +1035,32 @@
   (if (end? args) (scbad-args 'letrec args))
   (let ((body '()) (defs '()))
     (dlet ((*env* *env*))
-      (dolist (def (car args))
-        (if (or (end? def) (end? (cdr def)) (not (end? (cddr def))))
-            (scbad-binding def))
-        (let ((var (make-var (car def))))
-          (set! defs (cons (list var '() (cadr def)) defs))
-          (set! *env* (cons var *env*))))
-      (set! body (c1body (cdr args) '()))
+          (dolist (def (car args))
+                  (if (or (end? def) (end? (cdr def)) (not (end? (cddr def))))
+                      (scbad-binding def))
+                  (let ((var (make-var (car def))))
+                    (set! defs (cons (list var '() (cadr def)) defs))
+                    (set! *env* (cons var *env*))))
+          (set! body (c1body (cdr args) '()))
 
-      (dolist (def defs)
-              (let ((var (car def))
-                    (form (caddr def))
-                    (c.scm:free-vars (c.scm:difference *env* (map car defs)))) ;; c.scm, この時点での自由変数
-          (if (and (pair? form) (eq? (car form) 'lambda #;'LAMBDA))
-              (if (or (var-funarg var) (var-assigned var) (var-closed var))
-                  (set-car! (cdr def) (c1lambda (cdr form)))
-                  (begin (set-car! (cdr def) (c1lam (cdr form)))
-                         (set-var-local-fun var #t)
-                         (let ((requireds (caadr def)) ;; c.scm, #tの代わりに自由変数のリストをおく
-                               (rest (cadadr def)))
-                           (set-var-local-fun var (reverse (c.scm:difference (c.scm:difference c.scm:free-vars requireds)
-                                                                             rest))))
-                         (set-var-local-fun-args var (cadr def))))
-              (set-car! (cdr def) (c1expr form)))))
+          (dolist (def defs)
+                  (let ((var (car def))
+                        (form (caddr def))
+                        (c.scm:free-vars (c.scm:difference (c.scm:difference *env* '(CB))
+                                                           (map car defs)))) ;; c.scm, この時点での自由変数
+                    (if (and (pair? form) (eq? (car form) 'lambda #;'LAMBDA))
+                        (if (or (var-funarg var) (var-assigned var) (var-closed var))
+                            (set-car! (cdr def) (c1lambda (cdr form)))
+                            (begin (set-car! (cdr def) (c1lam (cdr form)))
+                                   (set-var-local-fun var #t)
+                                   (let ((requireds (caadr def)) ;; c.scm, #tの代わりに自由変数のリストをおく
+                                         (rest (cadadr def)))
+                                     (set-var-local-fun var (c.scm:reduction (reverse (c.scm:difference (c.scm:difference c.scm:free-vars requireds)
+                                                                                       rest)))))
+                                   (set-var-local-fun-args var (cadr def))))
+                        (set-car! (cdr def) (c1expr form)))))
 
-      (c1letrec-aux defs))
+          (c1letrec-aux defs))
     (list 'letrec #;c2letrec (reverse defs) body)))
 
 (define (c1letrec-aux defs)
