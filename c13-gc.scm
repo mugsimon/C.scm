@@ -40,7 +40,7 @@
                     ((letrec) (c13letrec args))
                     ((set!) (c13set! args))
                     ((quote) (c13quote args))
-                    ((list cons) (c13gc args)) ;; c13gc only
+                    ((list #;cons) (c13gc args)) ;; c13gc only
                     (else
                      (c13symbol-fun fun args))))
                  (else

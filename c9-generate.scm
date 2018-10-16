@@ -59,6 +59,7 @@
                             (cons '> "CSCM_MORE")
                             (cons 'car "CSCM_CAR")
                             (cons 'cdr "CSCM_CDR")
+                            (cons 'cddr "CSCM_CDDR")
                             (cons 'cons "CSCM_CONS")
                             (cons 'pair? "CSCM_PAIR_P")
                             (cons 'not "CSCM_NOT")
