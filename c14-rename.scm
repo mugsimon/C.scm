@@ -124,7 +124,7 @@
     `(set! ,var ,form)))
 
 (define (c14quote args)
-  `(quote ,args))
+  `(quote ,@args))
 
 (define (c14symbol-fun fun args)
   `(,(c14vref fun) ,@(c14args args)))
