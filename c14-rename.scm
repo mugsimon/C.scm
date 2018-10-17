@@ -23,6 +23,7 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (c14expr form)
+  ;;(print "c.scm:debug, c14expr, form -> " form) ;; debug
   (cond ((pair? form)
          (let ((fun (car form))
                (args (cdr form)))
@@ -144,7 +145,8 @@
 
 (define c14*chars* (list (cons #\? #\P)
                          (cons #\! #\B)
-                         (cons #\- #\_)))
+                         (cons #\- #\_)
+                         (cons #\* #\S)))
 
 (define (c14rename symbol)
   (let ((s-symbol (symbol->string symbol)))
