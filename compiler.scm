@@ -23,6 +23,17 @@
                 (begin body ...)
                 (loop (cdr rest)))))))))
 
+;; リストを作成する
+;; ただし最後の要素はcdr部に格納される
+(define (list* . x)
+  (cond ((null? x)
+         '())
+        ((null? (cdr x))
+         (car x))
+        (else
+         (cons (car x)
+               (apply list* (cdr x))))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; 共通関数
 ;; 自己評価的データなら#tを返す
