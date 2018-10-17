@@ -193,7 +193,7 @@
 (define (c.scm:generate-code x)
   (if (or (c.scm:c6raw-lambda x)
           (c.scm:c12assign x)
-          (c.scm:c13gc x))
+          #;(c.scm:c13gc x))
               (begin (display (c.scm:c7scheme x) c.scm:*scheme-port*)
                      (newline c.scm:*scheme-port*))
               (begin (c.scm:c9generate (apply-funs x c.scm:c7scheme c.scm:c10expand-or-and c.scm:c8anf c.scm:c14rename))
