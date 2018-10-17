@@ -3,6 +3,7 @@
 (define c9cscm "CSCM")
 (define c9void "CSCM_VOID")
 (define c9make-number "CSCM_MAKE_NUMBER")
+(define c9make-symbol "CSCM_MAKE_SYMBOL")
 (define c9nfalsep "CSCM_NFALSEP")
 (define c9true "CSCM_TRUE")
 (define c9false "CSCM_FALSE")
@@ -24,6 +25,11 @@
           (else
            (display (car a) c9*output-port*)
            (loop (cdr a))))))
+
+(define (c9write a)
+  (write a c9*output-port*))
+
+
 
 ;; (define var (lambda params body))
 ;; (define var expr)
@@ -78,9 +84,11 @@
       #t))
 
 (define (c9expr form r)
+  ;;(print "c.scm:debug, c9expr, form -> " form) ;; debug
   (cond ((pair? form)
          (let ((fun (car form))
                (args (cdr form)))
+           ;;(print "c.scm:debug, c9expr, fun -> " fun) ;; debug
            (cond ((symbol? fun)
                   (case fun
                     ((lambda) (c9lambda args r))
@@ -178,4 +186,15 @@
   (if r (c9print ");")))
 
 (define (c9quote x r)
-  (c9expr (car x) r))
+  (if r (c9display "return ("))
+  (let ((x (car x)))
+  (cond ((c.scm:self-eval? x)
+         (c9expr x #f))
+        ((symbol? x)
+         (let ((s-symbol (symbol->string x)))
+           (c9display c9make-symbol "(")
+           (c9write s-symbol)
+           (c9display ")")))
+        (else
+         (c9expr x r))))
+  (if r (c9print ");")))
