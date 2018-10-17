@@ -23,6 +23,17 @@
                 (begin body ...)
                 (loop (cdr rest)))))))))
 
+;; リストを作成する
+;; ただし最後の要素はcdr部に格納される
+(define (list* . x)
+  (cond ((null? x)
+         '())
+        ((null? (cdr x))
+         (car x))
+        (else
+         (cons (car x)
+               (apply list* (cdr x))))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; 共通関数
 ;; 自己評価的データなら#tを返す
@@ -139,6 +150,7 @@
 (load "~/c.scm/c11-expand-namedlet.scm")
 (load "~/c.scm/c12-assign.scm")
 (load "~/c.scm/c13-gc.scm")
+(load "~/c.scm/c14-rename.scm")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;
 ;; xにfunsを順番に適用した結果を返す
@@ -184,7 +196,7 @@
           (c.scm:c13gc x))
               (begin (display (c.scm:c7scheme x) c.scm:*scheme-port*)
                      (newline c.scm:*scheme-port*))
-              (begin (c.scm:c9generate (apply-funs x c.scm:c7scheme c.scm:c10expand-or-and c.scm:c8anf))
+              (begin (c.scm:c9generate (apply-funs x c.scm:c7scheme c.scm:c10expand-or-and c.scm:c8anf c.scm:c14rename))
                      (newline c.scm:*c-port*))))
 
 ;;;;;;;;;;;;;;;;;;;;;;
