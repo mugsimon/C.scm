@@ -84,11 +84,11 @@
       #t))
 
 (define (c9expr form r)
-  ;;(print "c.scm:debug, c9expr, form -> " form) ;; debug
+  ;(print "c.scm:debug, c9expr, form -> " form) ;; debug
   (cond ((pair? form)
          (let ((fun (car form))
                (args (cdr form)))
-           ;;(print "c.scm:debug, c9expr, fun -> " fun) ;; debug
+           ;(print "c.scm:debug, c9expr, fun -> " fun) ;; debug
            (cond ((symbol? fun)
                   (case fun
                     ((lambda) (c9lambda args r))
@@ -196,5 +196,5 @@
            (c9write s-symbol)
            (c9display ")")))
         (else
-         (c9expr x r))))
+         (c9expr x #f))))
   (if r (c9print ");")))
