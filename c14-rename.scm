@@ -12,19 +12,20 @@
                   (c.scm:c14function (car x) ;; define
                                      (cadr x) ;; name
                                      (caddr x)) ;; (lambda params body)
-                  `(,(car x) ,(cadr x) ,(c14expr form)))))
+                  `(,(car x) ,(c14vref (cadr x)) ,(c14expr form)))))
            (else
             (c14expr x)))
          (c14expr x)))
 
 (define (c.scm:c14function first name lambda-expr)
-  (let ((body (caddr lambda-expr)))
-    (c14expr body)))
+  `(,first ,(c14vref name) ,(c14expr lambda-expr)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (c14expr form)
-  ;;(print "c.scm:debug, c14expr, form -> " form) ;; debug
-  (cond ((pair? form)
+  #;(print "c.scm:debug, c14expr, form -> " form) ;; debug
+  (cond ((symbol? form)
+         (c14vref form))
+        ((pair? form)
          (let ((fun (car form))
                (args (cdr form)))
            (cond ((symbol? fun)
@@ -50,7 +51,7 @@
            ((#f) #f)
            ((()) '())
            (else
-            (c14vref form))))))
+            form)))))
 
 (define (c14if args)
   `(if ,(c14expr (car args))
@@ -123,10 +124,10 @@
     `(set! ,var ,form)))
 
 (define (c14quote args)
-  `(quote ,args))
+  `(quote ,@args))
 
 (define (c14symbol-fun fun args)
-  `(,(c14vref fun) ,(c14args args)))
+  `(,(c14vref fun) ,@(c14args args)))
 
 (define (c14args args)
   (if (null? args)
@@ -141,12 +142,14 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (c14primitive? symbol)
-  (memq symbol (list)))
+  (memq symbol (list '+ '- '* '/ '= '> '<
+                     )))
 
 (define c14*chars* (list (cons #\? #\P)
                          (cons #\! #\B)
                          (cons #\- #\_)
-                         (cons #\* #\S)))
+                         (cons #\* #\S)
+                         ))
 
 (define (c14rename symbol)
   (let ((s-symbol (symbol->string symbol)))
