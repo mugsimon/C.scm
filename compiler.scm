@@ -145,7 +145,7 @@
 (load "~/c.scm/c5-hoist.scm")
 (load "~/c.scm/c6-lambda.scm")
 (load "~/c.scm/c7-scheme.scm")
-(load "~/c.scm/c8-anf.scm")
+(load "~/c.scm/c8-a-normalize.scm")
 (load "~/c.scm/c9-generate.scm")
 (load "~/c.scm/c10-expand-or-and.scm")
 (load "~/c.scm/c11-expand-namedlet.scm")
@@ -197,7 +197,7 @@
           #;(c.scm:c13gc x))
               (begin (display (c.scm:c7scheme x) c.scm:*scheme-port*)
                      (newline c.scm:*scheme-port*))
-              (begin (c.scm:c9generate (apply-funs x c.scm:c7scheme c.scm:c10expand-or-and c.scm:c8anf c.scm:c14rename))
+              (begin (c.scm:c9generate (apply-funs x c.scm:c7scheme c.scm:c10expand-or-and c.scm:c8a-normalize c.scm:c14rename))
                      (newline c.scm:*c-port*))))
 
 ;;;;;;;;;;;;;;;;;;;;;;
