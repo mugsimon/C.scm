@@ -38,10 +38,11 @@
 ;;; 共通関数
 ;; 自己評価的データなら#tを返す
 (define (c.scm:self-eval? x)
-  (or (boolean? x)
-      (number? x)
+  (or (number? x)
+      (string? x)
       (char? x)
-      (string? x)))
+      (vector? x)
+      (boolean? x)))
 
 ;; リストxとリストyの和集合のリストを返す
 (define (c.scm:union x y)
