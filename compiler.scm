@@ -224,7 +224,7 @@
 (load "~/c.scm/c8-a-normalize.scm")
 (load "~/c.scm/c9-generate.scm")
 (load "~/c.scm/c10-expand-or-and.scm")
-(load "~/c.scm/c11-expand-namedlet.scm")
+#;(load "~/c.scm/c11-expand-namedlet.scm")
 (load "~/c.scm/c12-assign.scm")
 (load "~/c.scm/c13-gc.scm")
 (load "~/c.scm/c14-rename.scm")
@@ -262,7 +262,7 @@
 (define c.scm:*cscm* '())
 
 (define (c.scm:compile-sexp input)
-  (let ((x (apply-funs input c.scm:c0transform c.scm:c11expand-namedlet c.scm:c1 c.scm:c3normalize c.scm:c4close)))
+  (let ((x (apply-funs input c.scm:c0transform c.scm:c1 c.scm:c3normalize c.scm:c4close)))
     (dlet ((c.scm:*c5local-functions* '()))
           (set! x (c.scm:c5hoist x))
           (c.scm:generate-code x)
