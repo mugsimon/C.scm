@@ -228,6 +228,8 @@
 (load "~/c.scm/c12-assign.scm")
 (load "~/c.scm/c13-gc.scm")
 (load "~/c.scm/c14-rename.scm")
+;;
+(load "~/c.scm/list-to-cons.scm")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;
 ;; xにfunsを順番に適用した結果を返す
@@ -273,7 +275,7 @@
           #;(c.scm:c13gc x))
               (begin (display (c.scm:c7scheme x) c.scm:*scheme-port*)
                      (newline c.scm:*scheme-port*))
-              (begin (c.scm:c9generate (apply-funs x c.scm:c7scheme c.scm:c10expand-or-and c.scm:c8a-normalize c.scm:c14rename))
+              (begin (c.scm:c9generate (apply-funs x c.scm:c7scheme c.scm:c10expand-or-and c.scm:c8a-normalize c.scm:s1list-to-cons c.scm:c14rename))
                      (newline c.scm:*c-port*))))
 
 ;;;;;;;;;;;;;;;;;;;;;;

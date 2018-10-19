@@ -4,6 +4,7 @@
 (define c9void "CSCM_VOID")
 (define c9make-number "CSCM_MAKE_NUMBER")
 (define c9make-symbol "CSCM_MAKE_SYMBOL")
+(define c9make-string "CSCM_MAKE_STRING")
 (define c9nfalsep "CSCM_NFALSEP")
 (define c9true "CSCM_TRUE")
 (define c9false "CSCM_FALSE")
