@@ -121,6 +121,82 @@
       (string->symbol
        (string-append (car name) (number->string *newvar*)))))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; primitiveとlibrary手続き
+;; anfとrenameで使用する
+(define c.scm:*primitive* (list 'eqv? 'eq? 
+
+                            'number? 'complex? 'real? 'rational? 'integer?
+                            'exact? 'inexact?
+                            '= '< '> '<= '>=
+                            '+ '* '- '/ 
+                            'quotient 'remainder 'modulo
+                            'numerator 'denominator
+                            'floor 'ceiling 'truncate 'round
+                            'exp 'log 'sin 'cos 'tan 'asin 'acos 'atan
+                            'sqrt 'expt
+                            'make-rectangular 'make-polar 'real-part 'imag-part 'magnitude 'angle
+                            'exact->inexact 'inexact->exact
+                            'number->string 'string->number
+                            
+                            'pair? 'cons 'car 'cdr 'set-car! 'set-cdr!
+                            'caar 'cadr 'cddr
+
+                            'symbol?
+                            'symbol->string 'string->symbol
+
+                            'char? 'char=? 'char<? 'char>? 'char<=? 'char>=?
+                            'char->integer 'integer->char
+                            
+                            'string?
+                            'make-string
+                            'string-length 'string-ref 'string-set!
+
+
+                            'vector?
+                            'make-vector 'vector-length 'vector-ref 'vector-set!
+
+                            'procedure?
+                            'apply))
+(define c.scm:*library* (list 'equal?
+
+                          'zero? 'positive? 'negative? 'odd? 'even?
+                          'max 'min
+                          'abs
+                          'gcd 'lcm
+                          'rationalize
+
+                          'not
+                          'boolean?
+
+                          'caaar 'caadr 'cadar 'caddr 'cdaar 'cdadr 'cddar 'cdddr
+                          'caaaar 'caaadr 'caadar 'caaddr 'cadaar 'cadadr 'caddar 'cadddr
+                          'cdaaar 'cdaadr 'cdadar 'cdaddr 'cddaar 'cddadr 'cdddar 'cddddr
+                          'null? list?
+                          'list 'length 'append 'reverse 'list-tail 'list-ref
+                          'memq 'memv 'member
+                          'assq 'assv 'assoc
+
+                          'char-ci=? 'char-ci<? 'char-ci>? 'char-ci<=? 'char-ci>=?
+                          'char-alphabetic? 'char-numeric? 'char-whitespace? 'char-upper-case? 'char-lower-case?
+                          'char-upcase 'char-downcase
+
+                          'string
+                          'string=? 'string-ci=?
+                          'string<? 'string>? 'string<=? 'string>=?
+                          'string-ci<? 'string-ci>? 'string-ci<=? 'string-ci>=?
+                          'substring
+                          'string-append
+                          'string->list 'list->string
+                          'string-copy
+                          'string-fill!
+                          
+                          'vector
+                          'vector->list 'list->vector
+                          'vector-fill!
+
+                          'map 'for-each 'force))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 各パスをロード
 #|
