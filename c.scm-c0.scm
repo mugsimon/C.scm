@@ -410,7 +410,11 @@
                         (c0expr (cadr x))) 
                       bind))
         (vars (c0map car bind)))
-    (list 'let name (map list vars inits) (cadr (c0lam (cons vars body)))) ;; c.scm:c0
+    #;(list 'let name (map list vars inits) (cadr (c0lam (cons vars body)))) ;; c.scm:c0
+    `(letrec ((,name
+               (lambda ,vars ,
+                 (cadr (c0lam (cons vars body))))))
+       (,name ,@inits)) ;; c.scm:c0
     #;(dlet ((*env* (cons var *env*)))
       (let* ((arg-body (cons vars body)) 
              (fun (c0lam arg-body)))
