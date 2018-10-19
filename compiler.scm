@@ -258,6 +258,9 @@
 (define c.scm:*c-port* (current-output-port))
 (set! c9*output-port* c.scm:*c-port*)
 
+(define c.scm:*scheme* '())
+(define c.scm:*cscm* '())
+
 (define (c.scm:compile-sexp input)
   (let ((x (apply-funs input c.scm:c0transform c.scm:c11expand-namedlet c.scm:c1 c.scm:c3normalize c.scm:c4close)))
     (dlet ((c.scm:*c5local-functions* '()))
