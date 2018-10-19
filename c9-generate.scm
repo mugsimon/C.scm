@@ -106,6 +106,8 @@
                 (c9number form r))
                ((boolean? form)
                 (c9boolean form r))
+               ((string? form)
+                (c9string form r))
                ((null? form)
                 (c9null form r))))))
 
@@ -188,6 +190,14 @@
   (c9display c9nil)
   (if r (c9print ");")))
 
+(define (c9string x r)
+  (if r (c9display "return ("))
+  (let ((l (string-length x)))
+    (c9display c9make-string "(")
+    (c9write x)
+    (c9display ", " l ")"))
+  (if r (c9print ");")))
+
 (define (c9quote x r)
   (if r (c9display "return ("))
   (let ((x (car x)))
@@ -198,6 +208,8 @@
            (c9display c9make-symbol "(")
            (c9write s-symbol)
            (c9display ")")))
+        ((string? x)
+         (c9string x #f))
         (else
          (c9expr x #f))))
   (if r (c9print ");")))
