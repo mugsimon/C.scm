@@ -252,6 +252,7 @@
 (load "~/c.scm/c12-assign.scm")
 (load "~/c.scm/c13-gc.scm")
 (load "~/c.scm/c14-rename.scm")
+(load "~/c.scm/c15.scm")
 ;;
 (load "~/c.scm/list-to-cons.scm")
 
