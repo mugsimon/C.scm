@@ -62,15 +62,28 @@
         (else
          (cons (car x) (c.scm:difference (cdr x) y)))))
 
+(define (c.scm:var=? var1 var2)
+  (cond ((and (c.scm:var? var1) (c.scm:var? var2))
+         (eq? (var-name var1) (var-name var2)))
+        ((c.scm:var? var1)
+         (error "not a var" var2))
+        ((c.scm:var? var2)
+         (error "not a var" var1))
+        (else
+         (error "not a var" var1 var2))))
+
 (define (c.scm:member elt lst)
   (if (c.scm:var? elt)
-      (member (var-name elt) (map (lambda (x)
-                                    (if (c.scm:var? x)
-                                        (var-name x)
-                                        x))
-                                  lst))
+      (let loop ((lst lst))
+        (if (null? lst)
+            #f
+            (let ((top (car lst)))
+              (if (and (c.scm:var? top)
+                       (c.scm:var=? elt top))
+                  lst
+                  (loop (cdr lst))))))
       (member elt lst)))
-
+  
 ;; リスト内の同じ要素を排除する
 ;; make-varの場合はより新しい要素に置き換える
 (define (c.scm:reduction lst)
@@ -105,7 +118,8 @@
        (boolean? (var-closed x))
        (or (boolean? (var-local-fun x))
            (list? (var-local-fun x)))
-       (list? (var-local-fun-args x))
+       (or (boolean? (var-local-fun x))
+           (list? (var-local-fun-args x)))
        (list? (var-loc x))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -197,6 +211,16 @@
 
                           'map 'for-each 'force))
 
+(define (c.scm:primitive? x)
+  (if (memq x c.scm:*primitive*)
+      #t
+      #f))
+
+(define (c.scm:library? x)
+  (if (memq x c.scm:*library*)
+      #t
+      #f))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 各パスをロード
 #|
@@ -260,6 +284,7 @@
 
 (define c.scm:*scheme* '())
 (define c.scm:*cscm* '())
+(define *toplevel* '())
 
 (define (c.scm:compile-sexp input)
   (let ((x (apply-funs input c.scm:c0transform c.scm:c1 c.scm:c3normalize c.scm:c4close)))
