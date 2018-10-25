@@ -197,6 +197,16 @@
 
                           'map 'for-each 'force))
 
+(define (c.scm:primitive? x)
+  (if (memq x c.scm:*primitive*)
+      #t
+      #f))
+
+(define (c.scm:library? x)
+  (if (memq x c.scm:*library*)
+      #t
+      #f))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 各パスをロード
 #|
@@ -260,6 +270,7 @@
 
 (define c.scm:*scheme* '())
 (define c.scm:*cscm* '())
+(define *toplevel* '())
 
 (define (c.scm:compile-sexp input)
   (let ((x (apply-funs input c.scm:c0transform c.scm:c1 c.scm:c3normalize c.scm:c4close)))
