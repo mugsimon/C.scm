@@ -3,6 +3,7 @@
 ;; トップレベルの変数もmake-varにする
 ;; make-varに格納する情報は以下
 ;; コンストラクタを持つ部分はまだ未実装
+;; この情報をもと変形を行う
 
 ;;(define (var-name var) (car var)) ;; 変数名
 (define (var-toplevel var) (cadr var)) ;; もともとトップレベルの式->#t
