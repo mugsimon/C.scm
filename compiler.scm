@@ -118,7 +118,7 @@
        (boolean? (var-closed x))
        (or (boolean? (var-local-fun x))
            (list? (var-local-fun x)))
-       (or (boolean? (var-local-fun x))
+       (or (boolean? (var-local-fun-args x))
            (list? (var-local-fun-args x)))
        (list? (var-loc x))))
 
@@ -254,7 +254,7 @@
 (load "~/c.scm/c14-rename.scm")
 (load "~/c.scm/c15.scm")
 ;;
-(load "~/c.scm/list-to-cons.scm")
+;;(load "~/c.scm/list-to-cons.scm")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;
 ;; xにfunsを順番に適用した結果を返す

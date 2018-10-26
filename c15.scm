@@ -1,8 +1,8 @@
 ;;(define (var-name var) (car var)) ;; 変数名
-(define (var-toplevel var) (cadr var)) ;; トップレベル->#t
+(define (var-toplevel var) (cadr var)) ;; もともとトップレベルの式->#t
 ;;(define (var-assigned var) (caddr var)) ;; 代入される->#t
 (define (var-cscm var) (cadddr var)) ;; Cになる->#t
-(define (var-local-fun var) (car (cddddr var))) ;; hoistされた関数->#t
+(define (var-local-fun var) (car (cddddr var))) ;; ホイストされた関数->#t
 (define (var-cons var) (cadr (cddddr var))) ;; コンストラクタを持つ->#t
 (define (var-loc var) (caddr (cddddr var)))
 
@@ -26,29 +26,46 @@
                (c.scm:c15function (car x) ;; define
                                   (cadr x) ;; name
                                   (caddr x)) ;; (lambda params body)
-               (dlet ((c15*define* (make-var (cadr x))))
-                     (let ((expr (c.scm:c15expr (caddr x))))
-                       `(,(car x) ,c15*define* ,expr))))))
+               (c.scm:c15expr (car x)
+                              (cadr x)
+                              (caddr x)))))
         (else
          (c15expr x)))
       (c15expr x)))
 
 (define (c.scm:c15function first name lambda-expr)
-  (dlet ((c15*define* (make-var name)))
+  (dlet ((c15*define* (if (c.scm:var? name)
+                          name
+                          (make-var name))))
         (let ((vars (c.scm:member c15*define* *toplevel*)))
           (if vars
               (set! c15*define* (car vars))
-              (begin (set-var-toplevel c15*define* #t)
+              (begin (if (var-local-fun c15*define*)
+                         (set-var-toplevel c15*define* #f)
+                         (set-var-toplevel c15*define* #t))
                      (set-var-cscm c15*define* #t)
                      (set! *toplevel* (cons c15*define* *toplevel*)))))
         (let ((x (dlet ((*env* '()))
                        (c15lam (cdr lambda-expr)))))
           `(,first ,c15*define* (lambda ,@x)))))
 
-(define (c.scm:c15expr expr)
+(define (c.scm:c15expr first name expr)
+  (letrec ((gparse (lambda (env)
+                     (if (null? env)
+                         (let ((var (make-var name)))
+                           (set-var-toplevel var #t)
+                           (set-var-cscm var #t)
+                           (set! *toplevel* (cons var *toplevel*))
+                           (set! c15*define* var))
+                         (let ((var (car env)))
+                           (if (eq? name (var-name var))
+                               (set! c15*define* var)
+                               (gparse (cdr env))))))))
+    (gparse *toplevel*))
   (let ((x (dlet ((*env* '()))
                  (c15expr expr))))
-    x))        
+    `(,first ,c15*define* ,x)))
+
 ;;;;;;;;;;;;;;;;;;;;;;
 (define (c15constant x)
   (if (c.scm:self-eval? x)
@@ -91,6 +108,7 @@
   `(or ,@(c15args args)))
 
 (define (c15expr form)
+  ;;(print "c.scm:debug, c15expr, form -> " form) ;; debug
   (cond ((c.scm:symbol? form)
          (c15vref form))
         ((c.scm:pair? form)
@@ -112,7 +130,7 @@
                     (else
                      (c15symbol-fun fun args))))
                  (else
-                  `(,(c15expr fun) ,@(c15args))))))
+                  `(,(c15expr fun) ,@(c15args args))))))
         (else
          (case form
            ((#f) c15false)
@@ -124,9 +142,12 @@
 (define (c15symbol-fun name args)
   (letrec ((lparse (lambda (env)
                      (cond ((null? env)
-                            (gparse *toplevel*))
+                            (set-var-toplevel name #f)
+                            (set-var-cscm name #t)
+                            (set-var-cons name #f)
+                            (print "c.scm:debug, c15symbol-funでlparseのenvがnullになりました") ;; debug
+                            `(,name ,@(c15args args)))
                            ((eq? (var-name (car env)) (var-name name))
-                            (set-var-toplevel (car env) #f)
                             (if (var-assigned (car env))
                                 (set-var-cscm c15*define* #f))
                             `(,(car env) ,@(c15args args)))
@@ -134,21 +155,26 @@
                             (lparse (cdr env))))))
            (gparse (lambda (env)
                      (cond ((null? env)
-                            (if (or (c.scm:primitive? name)
-                                    (c.scm:library? name))
-                                `(,name ,@(c15args args)) 
-                                (let ((var (make-var name)))
-                                  (set-var-toplevel var #t)
-                                  (set-var-cscm var #t)
-                                  (set! *toplevel* (cons var *toplevel*))
-                                  `(,var ,@(c15args args)))))
-                           ((eq? name (var-name (car env)))
+                            (set-var-toplevel name #t)
+                            (set-var-cscm name #t)
+                            (set-var-cons name #f)
+                            (set! *toplevel* (cons name *toplevel*))
+                            `(,name ,@(c15args args)))
+                           ((eq? (var-name name) (var-name (car env)))
                             `(,(car env) ,@(c15args args)))
                            (else
                             (gparse (cdr env)))))))
-    (if (c.scm:var? name)
-        (lparse *env*)
-        (gparse *toplevel*))))
+    (cond ((or (c.scm:primitive? name)
+               (c.scm:library? name))
+           `(,name ,@(c15args args)))
+          ((and (c.scm:var? name)
+                (var-local-fun name))
+           (gparse *toplevel*))
+          ((c.scm:var? name)
+           (lparse *env*))
+          (else
+           (set! name (make-var name))
+           (gparse *toplevel*)))))
 
 ;;
 (define (c15args forms)
@@ -166,7 +192,8 @@
 
 ;;
 (define (c15lambda args)
-  (cons 'lambda (c1lam args)))
+  (set-var-cscm c15*define* #f)
+  (cons 'lambda (c15lam args)))
 
 ;;
 (define (c15lam lambda-expr)
@@ -243,9 +270,10 @@
     (else (c15constant (car args)))))
 
 (define (c15vref name)
+  (print "c.scm:debug, c15vref, name -> " name) ;; debug
   (letrec ((lparse (lambda (env)
                      (if (null? env)
-                         (begin (set-var-toplevel name #f) ;; ここに達することはない気がするが
+                         (begin (set-var-toplevel name #f)
                                 (set-var-cscm name #f)
                                 (set-var-cons name #f)
                                 (print "c.scm:debug, c15vrefでlparseのenvがnullになりました") ;; debug
