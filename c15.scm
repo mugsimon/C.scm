@@ -193,7 +193,7 @@
 ;;
 (define (c15lambda args)
   (set-var-cscm c15*define* #f)
-  (cons 'lambda (c1lam args)))
+  (cons 'lambda (c15lam args)))
 
 ;;
 (define (c15lam lambda-expr)
@@ -270,6 +270,7 @@
     (else (c15constant (car args)))))
 
 (define (c15vref name)
+  (print "c.scm:debug, c15vref, name -> " name) ;; debug
   (letrec ((lparse (lambda (env)
                      (if (null? env)
                          (begin (set-var-toplevel name #f)
