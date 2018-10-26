@@ -1,3 +1,9 @@
+;; ホイストが完了後に適用できる
+;; ホイストされた抜け殻の関数、ホイストされトップレベルとなった関数の各make-varを変更する
+;; トップレベルの変数もmake-varにする
+;; make-varに格納する情報は以下
+;; コンストラクタを持つ部分はまだ未実装
+
 ;;(define (var-name var) (car var)) ;; 変数名
 (define (var-toplevel var) (cadr var)) ;; もともとトップレベルの式->#t
 ;;(define (var-assigned var) (caddr var)) ;; 代入される->#t
@@ -14,6 +20,7 @@
 (define (set-var-cons var x) (set-car! (cdr (cddddr var)) x)) 
 (define (set-var-loc var x) (set-car! (cddr (cddddr var)) x))
 
+;;
 (define c15*define* #f)
 
 (define (c.scm:c15 x)
@@ -270,7 +277,7 @@
     (else (c15constant (car args)))))
 
 (define (c15vref name)
-  (print "c.scm:debug, c15vref, name -> " name) ;; debug
+  ;;(print "c.scm:debug, c15vref, name -> " name) ;; debug
   (letrec ((lparse (lambda (env)
                      (if (null? env)
                          (begin (set-var-toplevel name #f)

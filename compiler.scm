@@ -283,11 +283,30 @@
 (define c.scm:*c-port* (current-output-port))
 (set! c9*output-port* c.scm:*c-port*)
 
-(define c.scm:*scheme* '())
-(define c.scm:*cscm* '())
+(define c.scm:*compiled* '())
 (define *toplevel* '())
 
+(define (c.scm:compile input)
+  (dlet ((c.scm:*compiled* '())
+         (*toplevel* '()))
+        (if (string? input)
+            (c.scm:compile-file input)
+            (c.scm:compile-sexp input))
+        (let loop ((funs c.scm:*compiled*))
+          (if (null? funs)
+              #t
+              (begin (c.scm:generate-code (car funs))
+                     (loop (cdr funs)))))))
+      
 (define (c.scm:compile-sexp input)
+  (let ((x (apply-funs input c.scm:c0transform c.scm:c1 c.scm:c3normalize c.scm:c4close)))
+    (dlet ((c.scm:*c5local-functions* '()))
+          (set! x (c.scm:c5hoist x))
+          (set! c.scm:*c5local-functions* (map c.scm:c15 (cons x c.scm:*c5local-functions*)))
+          (set! c.scm:*compiled* (append c.scm:*c5local-functions* c.scm:*compiled*)))))
+
+
+#;(define (c.scm:compile-sexp input)
   (let ((x (apply-funs input c.scm:c0transform c.scm:c1 c.scm:c3normalize c.scm:c4close)))
     (dlet ((c.scm:*c5local-functions* '()))
           (set! x (c.scm:c5hoist x))
@@ -299,9 +318,17 @@
                        (loop (cdr local-funs))))))))
 
 (define (c.scm:generate-code x)
+  (let ((name (cadr x)))
+    (if (var-cscm name)
+        (begin (c.scm:c9generate (apply-funs x c.scm:c7scheme c.scm:c10expand-or-and c.scm:c8a-normalize c.scm:c14rename))
+               (newline c.scm:*c-port*))
+        (begin (display (c.scm:c14rename (c.scm:c7scheme x)) c.scm:*scheme-port*)
+               (newline c.scm:*scheme-port*)))))
+
+#;(define (c.scm:generate-code x)
   (if (or (c.scm:c6raw-lambda x)
           (c.scm:c12assign x)
-          #;(c.scm:c13gc x))
+          (c.scm:c13gc x))
               (begin (display (c.scm:c7scheme x) c.scm:*scheme-port*)
                      (newline c.scm:*scheme-port*))
               (begin (c.scm:c9generate (apply-funs x c.scm:c7scheme c.scm:c10expand-or-and c.scm:c8a-normalize c.scm:s1list-to-cons c.scm:c14rename))
