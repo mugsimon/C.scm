@@ -118,7 +118,7 @@
        (boolean? (var-closed x))
        (or (boolean? (var-local-fun x))
            (list? (var-local-fun x)))
-       (or (boolean? (var-local-fun x))
+       (or (boolean? (var-local-fun-args x))
            (list? (var-local-fun-args x)))
        (list? (var-loc x))))
 
