@@ -254,7 +254,7 @@
 (load "~/c.scm/c14-rename.scm")
 (load "~/c.scm/c15.scm")
 ;;
-(load "~/c.scm/list-to-cons.scm")
+;;(load "~/c.scm/list-to-cons.scm")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;
 ;; xにfunsを順番に適用した結果を返す
