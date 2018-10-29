@@ -25,6 +25,7 @@
 (define c15*define* #f)
 
 (define (c.scm:c15 x)
+  ;;(print "c.scm:debug, c.scm:c15, x -> " x) ;; debug
   (if (c.scm:pair? x)
       (case (car x)
         ((define) ;; (define name (lambda params body)) || (define name expr)
@@ -89,7 +90,7 @@
 ;; if
 (define (c15if args)
   (let ((t (c15fmla (car args)))
-        (m1 (c15epxr (cadr args)))
+        (m1 (c15expr (cadr args)))
         (m2 (c15expr (caddr args))))
     `(if ,t ,m1 ,m2)))
 
