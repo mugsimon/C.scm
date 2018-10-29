@@ -74,7 +74,9 @@
                             (cons 'null? "CSCM_NULL_P")
                             (cons 'length "CSCM_LENGTH") (cons 'append "CSCM_APPEND") (cons 'reverse "CSCM_REVERSE")
                             (cons 'memq "CSCM_MEMQ") (cons 'memv "CSCM_MEMV") (cons 'member "CSCM_MEMBER")
-                            (cons 'assq "CSCM_ASSQ") (cons 'assv "CSCM_ASSV") (cons 'assoc "CSCM_ASSOC")))
+                            (cons 'assq "CSCM_ASSQ") (cons 'assv "CSCM_ASSV") (cons 'assoc "CSCM_ASSOC")
+                            ;;; cscm
+                            (cons 'cscm_apply0 "CSCM_APPLY0") (cons 'cscm_apply1 "CSCM_APPLY1") (cons 'cscm_apply2 "CSCM_APPLY2") (cons 'cscm_apply3 "CSCM_APPLY3")))
 
 (define c9*special* '(define set! lambda if quote and or let let* letrec begin delay))
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
