@@ -3,6 +3,7 @@
 ;; トップレベルの変数もmake-varにする
 ;; make-varに格納する情報は以下
 ;; コンストラクタを持つ部分はまだ未実装
+;; この情報をもと変形を行う
 
 ;;(define (var-name var) (car var)) ;; 変数名
 (define (var-toplevel var) (cadr var)) ;; もともとトップレベルの式->#t
@@ -24,6 +25,7 @@
 (define c15*define* #f)
 
 (define (c.scm:c15 x)
+  ;;(print "c.scm:debug, c.scm:c15, x -> " x) ;; debug
   (if (c.scm:pair? x)
       (case (car x)
         ((define) ;; (define name (lambda params body)) || (define name expr)
@@ -88,7 +90,7 @@
 ;; if
 (define (c15if args)
   (let ((t (c15fmla (car args)))
-        (m1 (c15epxr (cadr args)))
+        (m1 (c15expr (cadr args)))
         (m2 (c15expr (caddr args))))
     `(if ,t ,m1 ,m2)))
 
