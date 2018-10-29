@@ -66,6 +66,8 @@
                             (cons 'symbol? "CSCM_SYMBOL_P")
                             (cons 'string? "CSCM_STRING_P")
                             (cons 'apply "CSCM_APPLY")
+                            ;;; cscm apply
+                            (cons 'cscm_apply0 "CSCM_APPLY0") (cons 'cscm_apply1 "CSCM_APPLY1") (cons 'cscm_apply2 "CSCM_APPLY2") (cons 'cscm_apply3 "CSCM_APPLY3")
                             ;;; library
                             (cons 'equal? "CSCM_EQUAL_P")
                             (cons 'not "CSCM_NOT")
@@ -74,9 +76,10 @@
                             (cons 'null? "CSCM_NULL_P")
                             (cons 'length "CSCM_LENGTH") (cons 'append "CSCM_APPEND") (cons 'reverse "CSCM_REVERSE")
                             (cons 'memq "CSCM_MEMQ") (cons 'memv "CSCM_MEMV") (cons 'member "CSCM_MEMBER")
-                            (cons 'assq "CSCM_ASSQ") (cons 'assv "CSCM_ASSV") (cons 'assoc "CSCM_ASSOC")
-                            ;;; cscm
-                            (cons 'cscm_apply0 "CSCM_APPLY0") (cons 'cscm_apply1 "CSCM_APPLY1") (cons 'cscm_apply2 "CSCM_APPLY2") (cons 'cscm_apply3 "CSCM_APPLY3")))
+                            (cons 'assq "CSCM_ASSQ") (cons 'assv "CSCM_ASSV") (cons 'assoc "CSCM_ASSOC")))
+
+(define c9*cscm* (list (cons 'cscm_vref "CSCM_VREF")
+                       ))
 
 (define c9*special* '(define set! lambda if quote and or let let* letrec begin delay))
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -153,17 +156,35 @@
 
 (define (c9symbol-fun fun args r)
   (if r (c9display "return ("))
-  (c9expr fun #f)
-  (c9display "(")
-  (if (not (null? args))
-      (let loop ((args args))
-        (cond ((null? (cdr args))
-               (c9expr (car args) #f))
+  (if (assq fun c9*cscm*)
+      (c9cscm fun args r) ;; cscm_vref
+      (begin 
+        (cond ((assq fun c9*primitive*)
+               (c9display (cdr (assq x c9*primitive*))))
               (else
-               (c9expr (car args) #f)
-               (c9display ", ")
-               (loop (cdr args))))))
-  (c9display ")")
+               (c9display fun)))
+        (c9display "(")
+        (if (not (null? args))
+            (let loop ((args args))
+              (cond ((null? (cdr args))
+                     (c9expr (car args) #f))
+                    (else
+                     (c9expr (car args) #f)
+                     (c9display ", ")
+                     (loop (cdr args))))))
+        (c9display ")")
+        (if r (c9print ");")))))
+
+(define (c9cscm fun args r)
+  (let ((cscm (assq fun c9*cscm*)))
+    (case (car cscm)
+      ((cscm_vref) (c9cscm_vref fun args r)))))
+
+(define (c9cscm_vref fun args r)
+  (let ((cscm (assq fun c9*cscm*)))
+    (c9display (cdr cscm) "(") ;; CSCM_VREF("変数")
+    (c9write (symbol->string (car args)))
+    (c9display ")"))
   (if r (c9print ");")))
 
 (define (c9symbol x r)
