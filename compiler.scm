@@ -253,6 +253,7 @@
 (load "~/c.scm/c13-gc.scm")
 (load "~/c.scm/c14-rename.scm")
 (load "~/c.scm/c15.scm")
+(load "~/c.scm/c16-call")
 ;;
 ;;(load "~/c.scm/list-to-cons.scm")
 
@@ -300,8 +301,12 @@
                          (close-output-port c.scm:*scheme-port*)
                          (close-output-port c.scm:*c-port*))
                    (set! c9*output-port* c.scm:*c-port*))
-            (begin 
-              (c.scm:generate-code)))))
+            (let loop ((compiled c.scm:*compiled*))
+              (if (null? compiled)
+                  (c.scm:generate-code)
+                  (let ((x (c.scm:c16 (car compiled))))
+                    (set-car! compiled x)
+                    (loop (cdr compiled))))))))
       
 (define (c.scm:compile-sexp input)
   (let ((x (apply-funs input c.scm:c0transform c.scm:c1 c.scm:c3normalize c.scm:c4close)))
@@ -360,7 +365,14 @@
 
 (define (c.scm:compile-file input)
   (let ((exp-list (c.scm:expr-lst input)))
-    (for-each c.scm:compile-sexp exp-list)))
+    (for-each c.scm:compile-sexp exp-list)
+    (let loop ((compiled c.scm:*compiled*))
+      (if (null? compiled)
+          #t
+          (let ((x (c.scm:c16 (car compiled))))
+            (set-car! compiled x)
+            (loop (cdr compiled)))))))
+         
 
 #;(define (c.scm:compile-file input)
   (let ((exp-list (c.scm:expr-lst input)))
