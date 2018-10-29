@@ -157,10 +157,10 @@
 (define (c9symbol-fun fun args r)
   (if r (c9display "return ("))
   (if (assq fun c9*cscm*)
-      (c9cscm fun args r) ;; cscm_vref
+      (c9cscm_vref fun args r) ;; cscm_vref
       (begin 
         (cond ((assq fun c9*primitive*)
-               (c9display (cdr (assq x c9*primitive*))))
+               (c9display (cdr (assq fun c9*primitive*))))
               (else
                (c9display fun)))
         (c9display "(")
@@ -174,11 +174,6 @@
                      (loop (cdr args))))))
         (c9display ")")
         (if r (c9print ");")))))
-
-(define (c9cscm fun args r)
-  (let ((cscm (assq fun c9*cscm*)))
-    (case (car cscm)
-      ((cscm_vref) (c9cscm_vref fun args r)))))
 
 (define (c9cscm_vref fun args r)
   (let ((cscm (assq fun c9*cscm*)))
