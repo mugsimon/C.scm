@@ -121,10 +121,10 @@
                (var-toplevel name)))
       (let ((n (length args)))
         (case n
-          ((0) `(cscm_apply0 ,name ,@(c16args args)))
-          ((1) `(cscm_apply1 ,name ,@(c16args args)))
-          ((2) `(cscm_apply2 ,name ,@(c16args args)))
-          ((3) `(cscm_apply3 ,name ,@(c16args args)))))
+          ((0) `(cscm_apply0 (cscm_vref ,name) ,@(c16args args)))
+          ((1) `(cscm_apply1 (cscm_vref ,name) ,@(c16args args)))
+          ((2) `(cscm_apply2 (cscm_vref ,name) ,@(c16args args)))
+          ((3) `(cscm_apply3 (cscm_vref ,name) ,@(c16args args)))))
       `(,name ,@(c16args args))))
 
 ;;
