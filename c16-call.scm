@@ -177,6 +177,7 @@
   ;;(print "c.scm:debug, c16vref, name -> " name) ;; debug
   (if (and (c.scm:var? name)
            (not (var-cscm name))
+           (var-toplevel name)
            (var-cscm c16*define*))
       `(cscm_vref ,name)
       name))

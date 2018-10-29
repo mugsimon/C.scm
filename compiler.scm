@@ -284,7 +284,7 @@
 (set! c9*output-port* c.scm:*c-port*)
 
 (define c.scm:*compiled* '())
-(define *toplevel* '())
+(define *toplevel* '()) ;; トップレベル環境
 
 (define (c.scm:compile input)
   (dlet ((c.scm:*compiled* '())
@@ -300,7 +300,8 @@
                          (close-output-port c.scm:*scheme-port*)
                          (close-output-port c.scm:*c-port*))
                    (set! c9*output-port* c.scm:*c-port*))
-            (c.scm:generate-code))))
+            (begin 
+              (c.scm:generate-code)))))
       
 (define (c.scm:compile-sexp input)
   (let ((x (apply-funs input c.scm:c0transform c.scm:c1 c.scm:c3normalize c.scm:c4close)))
