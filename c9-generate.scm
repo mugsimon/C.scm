@@ -54,7 +54,7 @@
 
 ;; form->expr
 (define (c.scm:c9generate-expr form)
-  (c9expr lambda-expr #t))
+  (c9expr form #t))
 
 ;;(define c9*primitive* '(+ - * / = < > car cdr cons pair? list set-car! set-cdr! null? display not remainder memq member symbol? eq? cadr caddr append error map apply assoc))
 (define c9*primitive* (list (cons 'eqv? "CSCM_EQV_P") (cons 'eq? "CSCM_EQ_P")
