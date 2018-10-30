@@ -176,6 +176,7 @@
 
 ;;; SCEVAL  The Expression Dispatcher.
 (define (c0expr form)
+  ;;(print "c.scm:debug, c0expr, form -> " form) ;; debug
   (cond ((symbol? form) 
          (c0vref form)) ;; 変数参照
         ((pair? form)
@@ -259,6 +260,7 @@
             (c0args (cdr forms)))))
 
 (define (c0begin forms)
+  ;;(print "c.scm:debug, c0begin, forms -> " forms) ;; debug
   (cond ((end? forms)
          c0begin-empty-default)
         ((end? (cdr forms))
@@ -564,6 +566,7 @@
 
 ;;; SCVREF  Variable References.
 (define (c0vref name)
+  ;;(print "c.scm:debug, c0vref, name -> " name) ;; debug
   name
   #;(let lookup ((env *env*) (ccb #f))
     (if (null? env)

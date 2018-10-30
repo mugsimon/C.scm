@@ -89,6 +89,7 @@
 
 ;; if
 (define (c15if args)
+  ;;(print "c.scm:debug, c15if, args -> " args) ;; debug
   (let ((t (c15fmla (car args)))
         (m1 (c15expr (cadr args)))
         (m2 (c15expr (caddr args))))
@@ -294,9 +295,9 @@
            (gparse (lambda (env)
                      (if (null? env)
                          (let ((var (make-var name)))
-                           (set-var-toplevel name #t)
-                           (set-var-cscm name #t)
-                           (set-var-cons name #f)
+                           (set-var-toplevel var #t)
+                           (set-var-cscm var #t)
+                           (set-var-cons var #f)
                            (set! *toplevel* (cons var *toplevel*))
                            var)
                          (let ((var (car env)))
@@ -310,6 +311,7 @@
 (define (c15set! args)
   (let ((name (car args))
         (form (cadr args)))
+    ;;(print "c.scm:debug, c15set!, c15*define -> " c15*define*) ;; debug
     (set-var-cscm c15*define* #f)
     (letrec ((lparse (lambda (env)
                        (if (null? env)
@@ -325,10 +327,10 @@
              (gparse (lambda (env)
                        (if (null? env)
                            (let ((var (make-var name)))
-                             (set-var-toplevel name #t)
-                             (set-var-cscm name #f)
-                             (set-var-cons name #f)
-                             (set-var-assigned #t)
+                             (set-var-toplevel var #t)
+                             (set-var-cscm var #f)
+                             (set-var-cons var #f)
+                             (set-var-assigned var #t)
                              (set! *toplevel* (cons var *toplevel*))
                              var)
                            (let ((var (car env)))
