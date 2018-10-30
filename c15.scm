@@ -42,7 +42,7 @@
          (c15expr x)))
       (c15expr x)))
 
-(define (c.scm:c15function first name lambda-expr)
+(define (c.scm:c15def-fun first name lambda-expr)
   (dlet ((c15*define* (if (c.scm:var? name)
                           name
                           (make-var name))))
@@ -287,7 +287,7 @@
                          (begin (set-var-toplevel name #f)
                                 (set-var-cscm name #f)
                                 (set-var-cons name #f)
-                                (print "c.scm:debug, c15vrefでlparseのenvがnullになりました") ;; debug
+                                (print "c.scm:debug, c15vrefでlparseのenvがnullになりました: " name) ;; debug
                                 name)
                          (let ((var (car env)))
                            (if (eq? (var-name var) (var-name name))
@@ -319,7 +319,7 @@
                            (begin (set-var-toplevel name #f)
                                   (set-var-cscm name #f)
                                   (set-var-cons name #f)
-                                  (print "c.scm:debug, c15set!でlparseのenvがnullになりました") ;; debug
+                                  (print "c.scm:debug, c15set!でlparseのenvがnullになりました: ") ;; debug
                                   `(set! ,name ,(c15expr form)))
                            (let ((var (car env)))
                              (if (eq? (var-name var) (var-name name))
@@ -341,3 +341,4 @@
       (if (c.scm:var? name)
           (lparse *env*)
           (gparse *toplevel*)))))
+

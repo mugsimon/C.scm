@@ -63,7 +63,7 @@
                             (cons '+ "CSCM_PLUS") (cons '* "CSCM_TIMES") (cons '- "CSCM_MINUS") (cons '/ "CSCM_DIFF")
                             (cons 'pair? "CSCM_PAIR_P") (cons 'cons "CSCM_CONS") (cons 'car "CSCM_CAR") (cons 'cdr "CSCM_CDR") (cons 'set-car! "CSCM_SETCAR_B") (cons 'set-cdr! "CSCM_SETCDR_B")
                             (cons 'caar "CSCM_CAAR") (cons 'cadr "CSCM_CADR") (cons 'cddr "CSCM_CDDR")
-                            (cons 'symbol? "CSCM_SYMBOL_P")
+                            (cons 'symbol? "CSCM_SYMBOL_P") (cons 'symbol->string "CSCM_SYMBOL2STRING") (cons 'string->symbol "CSCM_STRING2SYMBOL")
                             (cons 'string? "CSCM_STRING_P")
                             (cons 'apply "CSCM_APPLY")
                             ;;; cscm apply
