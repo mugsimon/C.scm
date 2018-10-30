@@ -13,7 +13,9 @@
                   (c.scm:c7scheme-function (car x) ;; define
                                             (cadr x) ;; name
                                             (caddr x)) ;; (lambda params body)
-                  `(,(car x) ,(cadr x) ,(c.scm:c7scheme-expr form)))))
+                  (c.scm:c7scheme-expr (car x)
+                                       (cadr x)
+                                       form))))
            ((begin)
             `(begin ,@(map c.scm:c7scheme (cdr x))))
            (else
@@ -28,9 +30,13 @@
     `(,first ,name ,x)))
 
 ;; form->expr
-(define (c.scm:c7scheme-expr form)
-  (let ((x (c7expr form)))
-    x))
+(define (c.scm:c7scheme-expr first name form)
+  (let ((x (c7expr form))
+        (name (if (c.scm:var? name)
+                  (var-name name)
+                  name)))
+    `(,first ,name ,x)))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (c7expr form)
   (cond ((c.scm:symbol? form)
