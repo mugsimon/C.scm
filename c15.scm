@@ -32,7 +32,7 @@
          (let ((form (caddr x))) ;; (lambda params body) || expr
            (if (and (c.scm:pair? form)
                     (eq? (car form) 'lambda))
-               (c.scm:c15function (car x) ;; define
+               (c.scm:c15def-func (car x) ;; define
                                   (cadr x) ;; name
                                   (caddr x)) ;; (lambda params body)
                (c.scm:c15expr (car x)
@@ -42,7 +42,7 @@
          (c15expr x)))
       (c15expr x)))
 
-(define (c.scm:c15def-fun first name lambda-expr)
+(define (c.scm:c15def-func first name lambda-expr)
   (dlet ((c15*define* (if (c.scm:var? name)
                           name
                           (make-var name))))
