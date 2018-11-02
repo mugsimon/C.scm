@@ -59,6 +59,14 @@
         (else
          (cons (car x) (c.scm:union (cdr x) y)))))
 
+(define (cscm:union x y)
+  (cond ((null? x)
+         y)
+        ((cscm:member (car x) y)
+         (cscm:union (cdr x) y))
+        (else
+         (cons (car x) (cscm:union (cdr x) y)))))
+
 ;; リストxからリストyの要素を取り除いたリストを返す
 (define (c.scm:difference x y)
   (cond ((null? x)
@@ -89,7 +97,35 @@
                   lst
                   (loop (cdr lst))))))
       (member elt lst)))
-  
+
+(define (cscm:memq elt lst)
+  (let ((elt (if (cscm:var? elt)
+                 (var-name elt)
+                 elt)))
+    (let loop ((lst lst))
+      (if (null? lst)
+          #f
+          (let ((top (if (cscm:var? (car lst))
+                         (var-name (car lst))
+                         (car lst))))
+            (if (eq? elt top)
+                lst
+                (loop (cdr lst))))))))
+
+(define (cscm:member elt lst)
+  (let ((elt (if (cscm:var? elt)
+                 (var-name elt)
+                 elt)))
+    (let loop ((lst lst))
+      (if (null? lst)
+          #f
+          (let ((top (if (cscm:var? (car lst))
+                         (var-name (car lst))
+                         (car lst))))
+            (if (equal? elt top)
+                lst
+                (loop (cdr lst))))))))
+    
 ;; リスト内の同じ要素を排除する
 ;; make-varの場合はより新しい要素に置き換える
 (define (c.scm:reduction lst)
@@ -287,7 +323,7 @@
 (load "~/Dropbox/scheme/c.scm/c0transform.scm") ;;
 (load "~/Dropbox/scheme/c.scm/c.scm-c1.scm")
 (load "~/Dropbox/scheme/c.scm/c3normalize.scm")
-(load "~/Dropbox/scheme/c.scm/c4-close.scm")
+(load "~/Dropbox/scheme/c.scm/c4close.scm")
 (load "~/Dropbox/scheme/c.scm/c5-hoist.scm")
 (load "~/Dropbox/scheme/c.scm/c6contain-lambda.scm")
 (load "~/Dropbox/scheme/c.scm/c7-scheme.scm")
@@ -354,7 +390,7 @@
                     (loop (cdr compiled))))))))
       
 (define (c.scm:compile-sexp input)
-  (let ((x (apply-funs input c0transform c.scm:c1 c3normalize c.scm:c4close)))
+  (let ((x (apply-funs input c0transform c.scm:c1 c3normalize c4close)))
     (dlet ((c.scm:*c5local-functions* '()))
           (set! x (c.scm:c5hoist x))
           (set! c.scm:*c5local-functions* (map c.scm:c15 (cons x c.scm:*c5local-functions*)))
