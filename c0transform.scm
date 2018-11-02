@@ -143,7 +143,7 @@
         ((end? (cdr args)) ;; keyしかない
          (c0begin (list (car args) (cadr c0cond-else-default)))) ;; keyを評価してnullを返す
         (else
-         (let ((temp (newvar "cscmcase"))) ;; c.scm:c0
+         (let ((temp (newvar "case"))) ;; c.scm:c0
            (c0expr `(let ((,temp ,(car args)))
                       ,(c0expand-case temp (cdr args))))))))
 
@@ -370,7 +370,7 @@
 (define (c0do args)
   (if (or (end? args) (end? (cdr args)) (end? (cadr args)))
       (error "CSCM:ERROR, c0do, syntax-error" `(do ,@args)))
-  (let ((name (newvar "cscmdo"))) ;; c.scm:c0
+  (let ((name (newvar "do"))) ;; c.scm:c0
     (c0named-let name (c0map (lambda (x) (list (car x) (cadr x))) (car args))
                  `((if ,(caadr args)
                        (begin ,@(cdadr args))
