@@ -44,6 +44,14 @@
       (vector? x)
       (boolean? x)))
 
+(define (cscm:self-eval? x)
+  (or (number? x)
+      (string? x)
+      (char? x)
+      (vector? x)
+      (boolean? x)))
+
+
 ;; リストxとリストyの和集合のリストを返す
 (define (c.scm:union x y)
   (cond ((null? x)

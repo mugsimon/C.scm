@@ -70,14 +70,6 @@
                  (c1expr form))))
     x))
 
-;; 自己評価的データなら#tを返す
-;; x->expr
-(define (c.scm:self-eval? x)
-  (or (boolean? x)
-      (number? x)
-      (char? x)
-      (string? x)))
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; SCTOPS  Compiler toplevel.
