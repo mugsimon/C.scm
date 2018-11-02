@@ -4,13 +4,13 @@
 ;; (define var expr)
 
 (define (c12contain-set!? x)
-  (if (cscm:pair? x)
+  (if (pair? x)
       (case (car x)
         ((define)
          (let ((first (car x))
                (name (cadr x))
                (form (caddr x)))
-           (if (and (cscm:pair? form)
+           (if (and (pair? form)
                     (eq? (car form) 'lambda))
                (c12def-func first
                             name

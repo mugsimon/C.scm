@@ -113,8 +113,16 @@
   (or (c.scm:var? x)
       (symbol? x)))
 
+(define (cscm:symbol? x)
+  (or (cscm:var? x)
+      (symbol? x)))
+
 (define (c.scm:pair? x)
   (and (not (c.scm:var? x))
+       (pair? x)))
+
+(define (cscm:pair? x)
+  (and (not (cscm:var? x))
        (pair? x)))
 
 (define (c.scm:var? x)
