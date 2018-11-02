@@ -24,18 +24,26 @@
       (error "CSCM:ERROR, c5hoist, not a definition" x)))
 
 (define (c5def-func first name lambda-expr)
-  (let ((tmp *c5hoisted-funs*))
+  (let ((tmp *c5hoisted-funs*)
+        (ret #f))    
     (set! *c5hoisted-funs* '())
+    ;;
     (let ((x (c5expr lambda-expr)))
-      (cons `(,first ,name ,x) *c5hoisted-funs*))
-    (set! *c5hoisted-funs* tmp)))
+      (set! ret (cons `(,first ,name ,x) *c5hoisted-funs*)))
+    ;;
+    (set! *c5hoisted-funs* tmp)
+    ret))
 
 (define (c5def-expr first name expr)
-  (let ((tmp *c5hoisted-funs*))
+  (let ((tmp *c5hoisted-funs*)
+        (ret #f))
     (set! *c5hoisted-funs* '())
+    ;;
     (let ((x (c5expr expr)))
-      (cons `(,first ,name ,x) *c5hoisted-funs*))
-    (set! *c5hoisted-funs* tmp)))
+      (set! ret (cons `(,first ,name ,x) *c5hoisted-funs*)))
+    ;;
+    (set! *c5hoisted-funs* tmp)
+    ret))
 
 (define *c5hoisted-funs* '())
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
