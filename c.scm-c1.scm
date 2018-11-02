@@ -1472,7 +1472,7 @@
                           ((eq? (var-name var) name)
                            (if ccb (set-var-closed var #t))
                            (set-var-assigned var #t)
-                           (list 'set! #;c2set! var ccb (c1expr form)))
+                           (list 'set! #;c2set! var ccb (c1expr form))) ;; ローカル変数の場合クローズされるかどうかの情報もある
                           (else (lookup (cdr env) ccb))))))))))
 
 (define (c2set! var ccb form)

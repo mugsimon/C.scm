@@ -35,7 +35,6 @@
                (apply list* (cdr x))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;; 共通関数
 ;; 自己評価的データなら#tを返す
 (define (c.scm:self-eval? x)
   (or (number? x)
@@ -50,7 +49,6 @@
       (char? x)
       (vector? x)
       (boolean? x)))
-
 
 ;; リストxとリストyの和集合のリストを返す
 (define (c.scm:union x y)
@@ -288,15 +286,15 @@
 ;;
 (load "~/Dropbox/scheme/c.scm/c0transform.scm") ;;
 (load "~/Dropbox/scheme/c.scm/c.scm-c1.scm")
-(load "~/Dropbox/scheme/c.scm/c3-normalize.scm")
+(load "~/Dropbox/scheme/c.scm/c3normalize.scm")
 (load "~/Dropbox/scheme/c.scm/c4-close.scm")
 (load "~/Dropbox/scheme/c.scm/c5-hoist.scm")
-(load "~/Dropbox/scheme/c.scm/c6-lambda.scm")
+(load "~/Dropbox/scheme/c.scm/c6contain-lambda.scm")
 (load "~/Dropbox/scheme/c.scm/c7-scheme.scm")
 (load "~/Dropbox/scheme/c.scm/c8-a-normalize.scm")
 (load "~/Dropbox/scheme/c.scm/c9-generate.scm")
 (load "~/Dropbox/scheme/c.scm/c10-expand-or-and.scm")
-(load "~/Dropbox/scheme/c.scm/c12-assign.scm")
+(load "~/Dropbox/scheme/c.scm/c12contain-set.scm")
 (load "~/Dropbox/scheme/c.scm/c13-gc.scm")
 (load "~/Dropbox/scheme/c.scm/c14-rename.scm")
 (load "~/Dropbox/scheme/c.scm/c15.scm")
@@ -356,7 +354,7 @@
                     (loop (cdr compiled))))))))
       
 (define (c.scm:compile-sexp input)
-  (let ((x (apply-funs input c0transform c.scm:c1 c.scm:c3normalize c.scm:c4close)))
+  (let ((x (apply-funs input c0transform c.scm:c1 c3normalize c.scm:c4close)))
     (dlet ((c.scm:*c5local-functions* '()))
           (set! x (c.scm:c5hoist x))
           (set! c.scm:*c5local-functions* (map c.scm:c15 (cons x c.scm:*c5local-functions*)))
@@ -399,16 +397,6 @@
                      (newline c.scm:*c-port*))))
 
 ;;;;;;;;;;;;;;;;;;;;;;
-(define (c.scm:expr-lst input)
-  (let ((iport (open-input-file input)))
-    (let loop ((expr (read iport))
-               (lst '()))
-      (cond ((eof-object? expr)
-             (close-input-port iport)
-             lst)
-            (else
-             (loop (read iport)
-                   (cons expr lst)))))))
 
 (define (c.scm:compile-file input)
   (let ((exp-list (c.scm:expr-lst input)))
