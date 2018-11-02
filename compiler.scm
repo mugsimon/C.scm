@@ -130,6 +130,19 @@
            (list? (var-local-fun-args x)))
        (list? (var-loc x))))
 
+(define (cscm:var? x)
+  (and (list? x)
+       (= (length x) 7)
+       (symbol? (var-name x))
+       (boolean? (var-funarg x))
+       (boolean? (var-assigned x))
+       (boolean? (var-closed x))
+       (or (boolean? (var-local-fun x))
+           (list? (var-local-fun x)))
+       (or (boolean? (var-local-fun-args x))
+           (list? (var-local-fun-args x)))
+       (list? (var-loc x))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 新しい変数を用意する
 ;; c0transform, c8anfで使用

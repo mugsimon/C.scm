@@ -1,8 +1,6 @@
 ;;; c.scm:c12assignはホイストが終了した関数を受け取り、set!があれば#t、なければ#fを返す
 ;; (define var (lambda params body))
 ;; (define var expr)
-;; (begin ...)
-;; (fun ...)
 (define (c.scm:c12assign x)
      (if (pair? x)
          (case (car x)
