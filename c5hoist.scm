@@ -1,5 +1,7 @@
 ;;; 定義を受け取り、ホイスト可能なローカル関数をトップレベルへ移動する
 ;;; 受け取る定義はクローズ済み
+;;; ホイストするときに定義の名前を変更する
+;;; cscm番号_所属関数_名前
 ;;; ホイストされたあとの関数を最初の要素とし、残りにホイストされた関数が続くリストを返す
 
 ;; (define var (lambda params body))
@@ -24,27 +26,34 @@
       (error "CSCM:ERROR, c5hoist, not a definition" x)))
 
 (define (c5def-func first name lambda-expr)
-  (let ((tmp *c5hoisted-funs*)
-        (ret #f))    
+  (let ((tmp0 *c5hoisted-funs*)
+        (tmp1 *c5name*)
+        (ret #f))
     (set! *c5hoisted-funs* '())
+    (set! *c5name* (symbol->string name))
     ;;
     (let ((x (c5expr lambda-expr)))
       (set! ret (cons `(,first ,name ,x) *c5hoisted-funs*)))
     ;;
-    (set! *c5hoisted-funs* tmp)
+    (set! *c5name* tmp1)
+    (set! *c5hoisted-funs* tmp0)
     ret))
 
 (define (c5def-expr first name expr)
-  (let ((tmp *c5hoisted-funs*)
+  (let ((tmp0 *c5hoisted-funs*)
+        (tmp1 *c5name*)
         (ret #f))
     (set! *c5hoisted-funs* '())
+    (set! *c5name* (symbol->string name))
     ;;
     (let ((x (c5expr expr)))
       (set! ret (cons `(,first ,name ,x) *c5hoisted-funs*)))
     ;;
-    (set! *c5hoisted-funs* tmp)
+    (set! *c5name* tmp1)
+    (set! *c5hoisted-funs* tmp0)
     ret))
 
+(define *c5name* #f) ;; 文字列が入る
 (define *c5hoisted-funs* '())
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (c5expr form)
@@ -114,7 +123,13 @@
                              cdefs))))))))
 
 (define (c5hoist-fun def)
-  (set! *c5hoisted-funs* (cons (cons 'define def) *c5hoisted-funs*)))
+  (let ((var (car def))
+        (exp (cadr def)))
+    (let ((name (symbol->string (var-name var)))
+          (t (symbol->string (newvar))))
+      (let ((newname (string->symbol (string-append t "_" *c5name* "_" name))))
+        (set-var-name var newname)  
+        (set! *c5hoisted-funs* (cons (cons 'define def) *c5hoisted-funs*))))))
 
 (define (c5letrec args)
   (let loop ((defs (car args))
