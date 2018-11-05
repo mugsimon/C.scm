@@ -361,6 +361,53 @@
                    (cons expr lst)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(define *scheme-port* (current-output-port))
+(define *c-port* (current-output-port))
+
+(define *scheme* '())
+(define *cscm* '())
+(define *rename-alist* '())
+
+(define (compile input)
+  (let ((tmp0 *scheme*)
+        (tmp1 *cscm*)
+        (ret #f))
+    (set! *scheme* '())
+    (set! *cscm* '())
+    ;;
+    (set! ret (if (string? input)
+                  (compile-file input)
+                  (compile-sexp input)))
+    ;;
+    (set! *cscm* tmp1)
+    (set! *scheme* tmp0)
+    ret))
+
+(define (compile-sexp input)
+  ((let ((cexps (compile-def input)))
+     
+     )))
+
+(define (compile-def input)
+  (let ((cexps (apply-funs c0transform c.scm:c1 c3normalize c4close c5hoist)))
+    (let ((topexp (car cexps)))
+      (if (c? topexp)
+          ))
+    cexps))
+
+(define (compile-file input)
+  )
+
+(define (c? sexp)
+  (not (or (c6contain-lambda? sexp)
+           (c12contain-set!? sexp))))
+
+
+    
+
+
+
+
 (define c.scm:*scheme-port* (current-output-port))
 (define c.scm:*c-port* (current-output-port))
 (set! c9*output-port* c.scm:*c-port*)
