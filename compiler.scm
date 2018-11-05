@@ -201,7 +201,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; primitiveとlibrary手続き
 ;; anfとrenameで使用する
-(define c.scm:*primitive* (list 'eqv? 'eq? 
+(define *primitive* (list 'eqv? 'eq? 
 
                             'number? 'complex? 'real? 'rational? 'integer?
                             'exact? 'inexact?
@@ -235,7 +235,7 @@
 
                             'procedure?
                             'apply))
-(define c.scm:*library* (list 'equal?
+(define *library* (list 'equal?
 
                           'zero? 'positive? 'negative? 'odd? 'even?
                           'max 'min
@@ -275,12 +275,22 @@
                           'map 'for-each 'force))
 
 (define (c.scm:primitive? x)
-  (if (memq x c.scm:*primitive*)
+  (if (memq x *primitive*)
       #t
       #f))
 
 (define (c.scm:library? x)
-  (if (memq x c.scm:*library*)
+  (if (memq x *library*)
+      #t
+      #f))
+
+(define (cscm:primitive? x)
+  (if (memq x *primitive*)
+      #t
+      #f))
+
+(define (cscm:library? x)
+  (if (memq x *library*)
       #t
       #f))
 
