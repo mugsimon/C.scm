@@ -324,7 +324,7 @@
 (load "~/Dropbox/scheme/c.scm/c.scm-c1.scm")
 (load "~/Dropbox/scheme/c.scm/c3normalize.scm")
 (load "~/Dropbox/scheme/c.scm/c4close.scm")
-(load "~/Dropbox/scheme/c.scm/c5-hoist.scm")
+(load "~/Dropbox/scheme/c.scm/c5hoist.scm")
 (load "~/Dropbox/scheme/c.scm/c6contain-lambda.scm")
 (load "~/Dropbox/scheme/c.scm/c7scheme.scm")
 (load "~/Dropbox/scheme/c.scm/c8-a-normalize.scm")
@@ -334,7 +334,8 @@
 (load "~/Dropbox/scheme/c.scm/c13-gc.scm")
 (load "~/Dropbox/scheme/c.scm/c14-rename.scm")
 (load "~/Dropbox/scheme/c.scm/c15.scm")
-(load "~/Dropbox/scheme/c.scm/c16-call")
+(load "~/Dropbox/scheme/c.scm/c16-call.scm")
+(load "~/Dropbox/scheme/c.scm/c17replace-cname.scm")
 
 
 
@@ -385,6 +386,12 @@
 
 (define (compile-sexp input)
   (compile-def input)
+  (replace-cname)
+  (for-each (lambda (x) (write (c7scheme x)) (newline)) *cscm*)
+  (for-each (lambda (x) (write (c7scheme x)) (newline)) *scheme*)
+  )
+
+(define (replace-cname)
   (let loop ((scheme *scheme*)
              (cscm *cscm*))
     (cond ((and (null? scheme)
@@ -393,18 +400,23 @@
           ((null? scheme)
            (let ((sexp (car cscm)))
              (set-car! cscm (c17replace-cname sexp)))
-           (loop (cdr cscm)))
+           (loop scheme 
+                 (cdr cscm)))
           ((null? cscm)
            (let ((sexp (car scheme)))
              (set-car! scheme (c17replace-cname sexp)))
-           (loop (cdr cscm)))
+           (loop (cdr scheme)
+                 cscm))
           (else
            (let ((sexp (car scheme)))
              (set-car! scheme (c17replace-cname sexp)))
-           (loop (cdr cscm))))))
- 
+           (loop (cdr scheme)
+                 cscm)))))
+
+;; トップレベルの定義を受け取り、ホイストまで行う
+;; CとSchemeを判断し、*scheme*と*cscm*に格納する
 (define (compile-def input)
-  (let ((cexps (apply-funs c0transform c.scm:c1 c3normalize c4close c5hoist))) ;; 先頭にトップレベル定義, 残りにホイストされたローカル関数
+  (let ((cexps (apply-funs input c0transform c.scm:c1 c3normalize c4close c5hoist))) ;; 先頭にトップレベル定義, 残りにホイストされたローカル関数
     (let ((topexp (car cexps)))
       (if (cscm? topexp)
           (let ((name (cadr topexp)))
@@ -421,9 +433,9 @@
                 (let ((var (cadr cexp)))
                   (let ((name (var-name var)))
                     (let ((cname (make-c-name name)))
-                      (set-var-name cname)
+                      (set-var-name var cname)
                       (set! *cscm* (cons cexp *cscm*)))))
-                (set! *scheme (cons cexp *scheme*)))
+                (set! *scheme* (cons cexp *scheme*)))
             (loop (cdr cexps)))))))
 
 (define (compile-file input)
@@ -433,8 +445,6 @@
   (not (or (c6contain-lambda? sexp)
            (c12contain-set!? sexp))))
 
-
-
 (define (make-c-name name)
   (string->symbol
    (string-append "c_" (symbol->string name))))    
@@ -443,6 +453,9 @@
 
 
 
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define c.scm:*scheme-port* (current-output-port))
 (define c.scm:*c-port* (current-output-port))

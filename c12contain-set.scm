@@ -23,7 +23,8 @@
       (error "CSCM:ERROR, c12contain-set!?, not a definition" x)))
 
 (define (c12def-func first name lambda-expr)
-  (if (var-assigned name) ;; トップレベルへの代入があるならCにはできない
+  (if (and (cscm:var? name)
+           (var-assigned name)) ;; トップレベルへの代入があるならCにはできない
       #f
       (let ((body (caddr lambda-expr)))
         (c12expr body))))
