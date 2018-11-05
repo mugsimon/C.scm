@@ -385,8 +385,23 @@
 
 (define (compile-sexp input)
   (compile-def input)
-  
-)
+  (let loop ((scheme *scheme*)
+             (cscm *cscm*))
+    (cond ((and (null? scheme)
+                (null? cscm))
+           #t)
+          ((null? scheme)
+           (let ((sexp (car cscm)))
+             (set-car! cscm (c17replace-cname sexp)))
+           (loop (cdr cscm)))
+          ((null? cscm)
+           (let ((sexp (car scheme)))
+             (set-car! scheme (c17replace-cname sexp)))
+           (loop (cdr cscm)))
+          (else
+           (let ((sexp (car scheme)))
+             (set-car! scheme (c17replace-cname sexp)))
+           (loop (cdr cscm))))))
  
 (define (compile-def input)
   (let ((cexps (apply-funs c0transform c.scm:c1 c3normalize c4close c5hoist))) ;; 先頭にトップレベル定義, 残りにホイストされたローカル関数
@@ -417,6 +432,8 @@
 (define (cscm? sexp)
   (not (or (c6contain-lambda? sexp)
            (c12contain-set!? sexp))))
+
+
 
 (define (make-c-name name)
   (string->symbol
