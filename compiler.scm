@@ -384,16 +384,32 @@
     ret))
 
 (define (compile-sexp input)
-  ((let ((cexps (compile-def input)))
-     
-     )))
-
+  (compile-def input)
+  
+)
+ 
 (define (compile-def input)
-  (let ((cexps (apply-funs c0transform c.scm:c1 c3normalize c4close c5hoist)))
+  (let ((cexps (apply-funs c0transform c.scm:c1 c3normalize c4close c5hoist))) ;; 先頭にトップレベル定義, 残りにホイストされたローカル関数
     (let ((topexp (car cexps)))
       (if (c? topexp)
-          ))
-    cexps))
+          (let ((name (cadr topexp)))
+            (let ((cname (make-c-name name)))
+              (set-car! (cdr topexp) cname)
+              (set! *rename-alist* (cons name cname))
+              (set! *cscm* (cons topexp *cscm*))))
+          (set! *scheme* (cons topexp *scheme*))))
+    (let loop ((cexps (cdr cexps)))
+      (if (null? cexps)
+          #t
+          (let ((cexp (car cexps)))
+            (if (c? cexp)
+                (let ((var (cadr cexp)))
+                  (let ((name (var-name var)))
+                    (let ((cname (make-c-name name)))
+                      (set-var-name cname)
+                      (set! *cscm* (cons cexp *cscm*)))))
+                (set! *scheme (cons cexp *scheme*)))
+            (loop (cdr cexps)))))))
 
 (define (compile-file input)
   )
@@ -402,8 +418,9 @@
   (not (or (c6contain-lambda? sexp)
            (c12contain-set!? sexp))))
 
-
-    
+(define (make-c-name name)
+  (string->symbol
+   (string-append "c_" (symbol->string name))))    
 
 
 
