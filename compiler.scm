@@ -76,6 +76,14 @@
         (else
          (cons (car x) (c.scm:difference (cdr x) y)))))
 
+(define (cscm:difference x y)
+  (cond ((null? x)
+         '())
+        ((cscm:member (car x) y)
+         (cscm:difference (cdr x) y))
+        (else
+         (cons (car x) (cscm:difference (cdr x) y)))))
+
 (define (c.scm:var=? var1 var2)
   (cond ((and (c.scm:var? var1) (c.scm:var? var2))
          (eq? (var-name var1) (var-name var2)))
@@ -136,6 +144,19 @@
           (else
            (let ((elt (car lst)))
              (let ((tmp (c.scm:member elt rlst)))
+               (if tmp
+                   (begin (set-car! tmp elt)
+                          (loop (cdr lst) rlst))
+                   (loop (cdr lst) (cons elt rlst)))))))))
+
+(define (cscm:reduction lst)
+  (let loop ((lst lst)
+             (rlst '()))
+    (cond ((null? lst)
+           (reverse rlst))
+          (else
+           (let ((elt (car lst)))
+             (let ((tmp (cscm:member elt rlst)))
                (if tmp
                    (begin (set-car! tmp elt)
                           (loop (cdr lst) rlst))
@@ -331,7 +352,7 @@
 ;;(load "~/c.scm/list-to-cons.scm")
 ;;
 (load "~/Dropbox/scheme/c.scm/c0transform.scm") ;;
-(load "~/Dropbox/scheme/c.scm/c.scm-c1.scm")
+(load "~/Dropbox/scheme/c.scm/c1analysis.scm")
 (load "~/Dropbox/scheme/c.scm/c3normalize.scm")
 (load "~/Dropbox/scheme/c.scm/c4close.scm")
 (load "~/Dropbox/scheme/c.scm/c5hoist.scm")
@@ -426,7 +447,7 @@
 ;; トップレベルの定義を受け取り、ホイストまで行う
 ;; CとSchemeを判断し、*scheme*と*cscm*に格納する
 (define (compile-def input)
-  (let ((cexps (apply-funs input c0transform c.scm:c1 c3normalize c4close c5hoist))) ;; 先頭にトップレベル定義, 残りにホイストされたローカル関数
+  (let ((cexps (apply-funs input c0transform c1analysis c4close c5hoist))) ;; 先頭にトップレベル定義, 残りにホイストされたローカル関数
     (let ((topexp (car cexps)))
       (if (cscm? topexp)
           (let ((name (cadr topexp)))
@@ -458,6 +479,10 @@
 (define (make-c-name name)
   (string->symbol
    (string-append "c_" (symbol->string name))))    
+
+
+
+
 
 
 
