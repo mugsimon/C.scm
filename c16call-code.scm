@@ -206,4 +206,4 @@
 (define (c16set! args)
   (let ((var (car args))
         (exp (cadr args)))
-    `(set! ,var ,(c16expr exp)))) ;; cscmではないはず
+    `(set! ,var ,(c16expr exp))))
