@@ -29,7 +29,7 @@
         (set! *cflag* #t)
         (set! *cflag* #f)))             
   (let ((x (c16expr lambda-expr)))
-    `(,first ,name ,lambda-expr)))
+    `(,first ,name ,x)))
 
 (define (c16def-expr first name expr)
   (let ((name (if (cscm:var? name)
@@ -42,11 +42,15 @@
     `(,first ,name ,x)))
 
 (define (c16c? name)
+  ;;(print "cscm:debug, c16c?, name -> " name) ;; debug
   (let ((name (symbol->string name)))
-    (let ((head (substring name 0 2)))
-      (if (equal? head "c_")
-          #t
-          #f))))
+    (let ((len (string-length name)))
+      (if (< len 3)
+          #f
+          (let ((head (substring name 0 2)))
+            (if (equal? head "c_")
+                #t
+                #f))))))
  
 ;;;;;;;;;;;;;;;;;;;;;;
 (define (c16constant x)

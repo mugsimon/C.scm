@@ -331,29 +331,25 @@
 (load "c11-expand-namedlet.scm")
 (load "c12-assign.scm")
 (load "c13-gc.scm")
+
+(load "c0transform.scm") ;;
+(load "c1analysis.scm")
+(load "c4close.scm")
+(load "c5hoist.scm")
+(load "c6contain-lambda.scm")
+(load "c7scheme.scm")
+(load "c8-a-normalize.scm")
+(load "c9-generate.scm")
+(load "c10-expand-or-and.scm")
+(load "c12contain-set.scm")
+(load "c13-gc.scm")
+(load "c14-rename.scm")
+(load "c16call-code.scm")
+(load "c17replace-cname.scm")
 |#
-;(load "~/c.scm/c.scm-c0.scm")
-;(load "~/c.scm/c.scm-c1.scm")
-;(load "~/c.scm/c3-normalize.scm")
-;(load "~/c.scm/c4-close.scm")
-;(load "~/c.scm/c5-hoist.scm")
-;(load "~/c.scm/c6-lambda.scm")
-;(load "~/c.scm/c7-scheme.scm")
-;(load "~/c.scm/c8-a-normalize.scm")
-;(load "~/c.scm/c9-generate.scm")
-;(load "~/c.scm/c10-expand-or-and.scm")
-#;(load "~/c.scm/c11-expand-namedlet.scm")
-;(load "~/c.scm/c12-assign.scm")
-;(load "~/c.scm/c13-gc.scm")
-;(load "~/c.scm/c14-rename.scm")
-;(load "~/c.scm/c15.scm")
-;(load "~/c.scm/c16-call")
-;;
-;;(load "~/c.scm/list-to-cons.scm")
-;;
+
 (load "~/Dropbox/scheme/c.scm/c0transform.scm") ;;
 (load "~/Dropbox/scheme/c.scm/c1analysis.scm")
-(load "~/Dropbox/scheme/c.scm/c3normalize.scm")
 (load "~/Dropbox/scheme/c.scm/c4close.scm")
 (load "~/Dropbox/scheme/c.scm/c5hoist.scm")
 (load "~/Dropbox/scheme/c.scm/c6contain-lambda.scm")
@@ -364,9 +360,9 @@
 (load "~/Dropbox/scheme/c.scm/c12contain-set.scm")
 (load "~/Dropbox/scheme/c.scm/c13-gc.scm")
 (load "~/Dropbox/scheme/c.scm/c14-rename.scm")
-(load "~/Dropbox/scheme/c.scm/c15.scm")
-(load "~/Dropbox/scheme/c.scm/c16-call.scm")
+(load "~/Dropbox/scheme/c.scm/c16call-code.scm")
 (load "~/Dropbox/scheme/c.scm/c17replace-cname.scm")
+
 
 
 
@@ -418,6 +414,12 @@
 (define (compile-sexp input)
   (compile-def input)
   (replace-cname)
+  (let loop ((cscm *cscm*))
+    (if (null? cscm)
+        #t
+        (let ((sexp (car cscm)))
+          (set-car! cscm (c16call-code sexp))
+          (loop (cdr cscm)))))
   (for-each (lambda (x) (write (c7scheme x)) (newline)) *cscm*)
   (for-each (lambda (x) (write (c7scheme x)) (newline)) *scheme*)
   )
@@ -470,7 +472,7 @@
             (loop (cdr cexps)))))))
 
 (define (compile-file input)
-  )
+  #t)
 
 (define (cscm? sexp)
   (not (or (c6contain-lambda? sexp)
