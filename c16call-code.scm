@@ -122,30 +122,31 @@
 
 ;; (f args)
 (define (c16symbol-fun name args)  
-  (cond ((or (and *cflag*
-                  (cscm:var? name)
-                  (var-local-fun name)
-                  (c16c? (var-name name)))
-             (and *cflag*
-                  (not (cscm:var? name))
-                  (not (cscm:primitive? name))
-                  (not (cscm:library? name))
-                  (c16c? name)))
+  (cond ((or (and *cflag* ;; 自分がC
+                  (cscm:var? name) ;; 呼び出し対象がトップレベル（もとからグローバル）ではない
+                  (var-local-fun name) ;; ホイストされている
+                  (not (c16c? (var-name name)))) ;; schemeである
+             (and *cflag* ;; 自分がC
+                  (not (cscm:var? name)) ;; 呼び出し対象がトップレベル
+                  (not (cscm:primitive? name)) ;; プリミティブではない
+                  (not (cscm:library? name)) ;; ライブラリではない
+                  (not (c16c? name)))) ;; schemeである
          (let ((n (length args)))
            (case n
              ((0) `(cscm_apply0 (cscm_gvref ,name) ,@(c16args args)))
              ((1) `(cscm_apply1 (cscm_gvref ,name) ,@(c16args args)))
              ((2) `(cscm_apply2 (cscm_gvref ,name) ,@(c16args args)))
              ((3) `(cscm_apply3 (cscm_gvref ,name) ,@(c16args args))))))
-        ((and *cflag*
-              (cscm:var? name)
-              (not (c16c? (var-name name))))
+        ((and *cflag* ;; 自分がC
+              (cscm:var? name) ;; 呼び出し対象がトップレベルではない
+              (not (var-local-fun name)) ;; ホイストされていない
+              (not (c16c? (var-name name)))) ;;schemeである
          (let ((n (length args)))
            (case n
-             ((0) `(cscm_apply0 (cscm_vref ,name) ,@(c16args args)))
-             ((1) `(cscm_apply1 (cscm_vref ,name) ,@(c16args args)))
-             ((2) `(cscm_apply2 (cscm_vref ,name) ,@(c16args args)))
-             ((3) `(cscm_apply3 (cscm_vref ,name) ,@(c16args args)))))) ;; 修正が必要
+             ((0) `(cscm_apply0 ,name ,@(c16args args)))
+             ((1) `(cscm_apply1 ,name ,@(c16args args)))
+             ((2) `(cscm_apply2 ,name ,@(c16args args)))
+             ((3) `(cscm_apply3 ,name ,@(c16args args))))))
         (else
          `(,name ,@(c16args args)))))
 

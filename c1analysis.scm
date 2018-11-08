@@ -431,7 +431,7 @@
           (let ((var (car env)))
             (cond ((eq? var 'CB) (lookup (cdr env) #t))
                   ((eq? (var-name var) name)
-                   (if ccb (set-var-closed var #t))
+                   (if ccb (set-var-closed var #t))
                    (set-var-assigned var #t)
                    (list 'set! var (c1expr form)))
                   (else (lookup (cdr env) ccb))))))))
