@@ -1,28 +1,3 @@
-;; マクロ
-(define-syntax dlet
-  (syntax-rules ()
-    ((dlet ((var val) ...) body ...)
-     (let ((stack (list var ...)))
-       (define (pop)
-         (let ((top (car stack)))
-           (set! stack (cdr stack))
-           top))
-       (set! var val) ...
-       (let ((retval (begin body ...)))
-         (set! var (pop)) ...
-         retval)))))
-
-(define-syntax dolist
-  (syntax-rules ()
-    ((dolist (var lst) body ...)
-     (let loop ((rest lst))
-       (cond ((null? rest)
-              '())
-             (else
-              (let ((var (car rest)))
-                (begin body ...)
-                (loop (cdr rest)))))))))
-
 ;; リストを作成する
 ;; ただし最後の要素はcdr部に格納される
 (define (list* . x)
@@ -36,13 +11,6 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 自己評価的データなら#tを返す
-(define (c.scm:self-eval? x)
-  (or (number? x)
-      (string? x)
-      (char? x)
-      (vector? x)
-      (boolean? x)))
-
 (define (cscm:self-eval? x)
   (or (number? x)
       (string? x)
@@ -51,14 +19,6 @@
       (boolean? x)))
 
 ;; リストxとリストyの和集合のリストを返す
-(define (c.scm:union x y)
-  (cond ((null? x)
-         y)
-        ((c.scm:member (car x) y)
-         (c.scm:union (cdr x) y))
-        (else
-         (cons (car x) (c.scm:union (cdr x) y)))))
-
 (define (cscm:union x y)
   (cond ((null? x)
          y)
@@ -68,14 +28,6 @@
          (cons (car x) (cscm:union (cdr x) y)))))
 
 ;; リストxからリストyの要素を取り除いたリストを返す
-(define (c.scm:difference x y)
-  (cond ((null? x)
-         '())
-        ((c.scm:member (car x) y)
-         (c.scm:difference (cdr x) y))
-        (else
-         (cons (car x) (c.scm:difference (cdr x) y)))))
-
 (define (cscm:difference x y)
   (cond ((null? x)
          '())
@@ -93,18 +45,6 @@
          (error "not a var" var1))
         (else
          (error "not a var" var1 var2))))
-
-(define (c.scm:member elt lst)
-  (if (c.scm:var? elt)
-      (let loop ((lst lst))
-        (if (null? lst)
-            #f
-            (let ((top (car lst)))
-              (if (and (c.scm:var? top)
-                       (c.scm:var=? elt top))
-                  lst
-                  (loop (cdr lst))))))
-      (member elt lst)))
 
 (define (cscm:memq elt lst)
   (let ((elt (if (cscm:var? elt)
@@ -136,19 +76,6 @@
     
 ;; リスト内の同じ要素を排除する
 ;; make-varの場合はより新しい要素に置き換える
-(define (c.scm:reduction lst)
-  (let loop ((lst lst)
-             (rlst '()))
-    (cond ((null? lst)
-           (reverse rlst))
-          (else
-           (let ((elt (car lst)))
-             (let ((tmp (c.scm:member elt rlst)))
-               (if tmp
-                   (begin (set-car! tmp elt)
-                          (loop (cdr lst) rlst))
-                   (loop (cdr lst) (cons elt rlst)))))))))
-
 (define (cscm:reduction lst)
   (let loop ((lst lst)
              (rlst '()))
@@ -355,7 +282,7 @@
 (load "~/Dropbox/scheme/c.scm/c6contain-lambda.scm")
 (load "~/Dropbox/scheme/c.scm/c7scheme.scm")
 (load "~/Dropbox/scheme/c.scm/c8-a-normalize.scm")
-(load "~/Dropbox/scheme/c.scm/c9-generate.scm")
+(load "~/Dropbox/scheme/c.scm/c9generate.scm")
 (load "~/Dropbox/scheme/c.scm/c10-expand-or-and.scm")
 (load "~/Dropbox/scheme/c.scm/c12contain-set.scm")
 (load "~/Dropbox/scheme/c.scm/c13-gc.scm")
@@ -420,8 +347,6 @@
         (let ((sexp (car cscm)))
           (set-car! cscm (c16call-code sexp))
           (loop (cdr cscm)))))
-  (for-each (lambda (x) (write (c7scheme x)) (newline)) *cscm*)
-  (for-each (lambda (x) (write (c7scheme x)) (newline)) *scheme*)
   )
 
 (define (replace-cname)
@@ -482,7 +407,7 @@
   (string->symbol
    (string-append "c_" (symbol->string name))))    
 
-
+          
 
 
 
