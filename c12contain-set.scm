@@ -23,10 +23,17 @@
       (error "CSCM:ERROR, c12contain-set!?, not a definition" x)))
 
 (define (c12def-func first name lambda-expr)
-  (if (var-assigned name) ;; トップレベルへの代入があるならCにはできない
+  (if (and (cscm:var? name)
+           (var-assigned name)) ;; トップレベルへの代入があるならCにはできない
       #f
       (let ((body (caddr lambda-expr)))
         (c12expr body))))
+
+(define (c12def-expr first name expr)
+  (if (and (cscm:var? name)
+           (var-assigned name))
+      #f
+      (c12expr expr)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (c12expr form)
@@ -92,7 +99,7 @@
         (body (cadr args)))
     (let ((exps (map cadr defs)))
       (or (c12args exps)
-          (c12body)))))
+          (c12expr body)))))
 
 (define (c12letrec args)
   (let ((defs (car args))
