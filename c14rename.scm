@@ -1,24 +1,30 @@
 ;;; c.scm:c14renameはホイストが終了した各関数を受け取り、Cにできない名前を含む文字を変更する
 ;; (define var (lambda params body))
 ;; (define var expr)
-;; (fun ...)
-(define (c.scm:c14rename x)
-     (if (pair? x)
-         (case (car x)
-           ((define)
-            (let ((form (caddr x)))
-              (if (and (pair? form)
-                       (eq? (car form) 'lambda))
-                  (c.scm:c14function (car x) ;; define
-                                     (cadr x) ;; name
-                                     (caddr x)) ;; (lambda params body)
-                  `(,(car x) ,(c14vref (cadr x)) ,(c14expr form)))))
-           (else
-            (c14expr x)))
-         (c14expr x)))
+(define (c14rename-def x)
+  (if (pair? x)
+      (case (car x)
+        ((define)
+         (let ((first (car x))
+               (name (cadr x))
+               (form (caddr x)))
+           (if (and (pair? form)
+                    (eq? (car form) 'lambda))
+               (c14def-func first
+                            name
+                            form)
+               (c14def-expr first
+                            name
+                            form))))
+        (else
+         (error "CSCM:ERROR, c14rename, not a definition")))
+      (error "CSCM:ERROR, c14rename, not a definition")))
 
-(define (c.scm:c14function first name lambda-expr)
+(define (c14def-func first name lambda-expr)
   `(,first ,(c14vref name) ,(c14expr lambda-expr)))
+
+(define (c14def-expr first name expr)
+  `(,first ,(c14vref name) ,(c14expr expr)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (c14expr form)
@@ -88,28 +94,18 @@
          '())))
 
 (define (c14let args)
-  (if (symbol? (car args))
-      (c14named-let args)
-      (let ((defs (car args))
-            (body (c14expr (cadr args))))
-        (let ((vars (map c14expr (map car defs)))
-              (exps (map c14expr (map cadr defs))))
-          `(let ,(map list vars exps) ,body)))))
-
-(define (c14named-let args)
-  (let ((name (c14vref (car args)))
-        (defs (cadr args))
-        (body (c14expr (caddr args))))
+  (let ((defs (car args))
+        (body (c14expr (cadr args))))
     (let ((vars (map c14expr (map car defs)))
           (exps (map c14expr (map cadr defs))))
-      `(let ,name ,(map list vars exps) ,body))))
+      `(let ,(map list vars exps) ,body))))
 
 (define (c14let* args)
   (let ((defs (car args))
-            (body (c14expr (cadr args))))
-        (let ((vars (map c14expr (map car defs)))
-              (exps (map c14expr (map cadr defs))))
-          `(let* ,(map list vars exps) ,body))))
+        (body (c14expr (cadr args))))
+    (let ((vars (map c14expr (map car defs)))
+          (exps (map c14expr (map cadr defs))))
+      `(let* ,(map list vars exps) ,body))))
 
 (define (c14letrec args)
   (let ((defs (car args))
@@ -142,8 +138,8 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (c14primitive? symbol)
-  (or (memq symbol c.scm:*primitive*)
-      (memq symbol c.scm:*library*)))
+  (or (memq symbol *primitive*)
+      (memq symbol *library*)))
 
 (define c14*chars* (list (cons #\! #\B)
                          (cons #\$ #\D)

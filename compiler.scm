@@ -36,16 +36,6 @@
         (else
          (cons (car x) (cscm:difference (cdr x) y)))))
 
-(define (c.scm:var=? var1 var2)
-  (cond ((and (c.scm:var? var1) (c.scm:var? var2))
-         (eq? (var-name var1) (var-name var2)))
-        ((c.scm:var? var1)
-         (error "not a var" var2))
-        ((c.scm:var? var2)
-         (error "not a var" var1))
-        (else
-         (error "not a var" var1 var2))))
-
 (define (cscm:memq elt lst)
   (let ((elt (if (cscm:var? elt)
                  (var-name elt)
@@ -91,34 +81,13 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; make-varを持つSchemeコードで使用する
-(define (c.scm:symbol? x)
-  (or (c.scm:var? x)
-      (symbol? x)))
-
 (define (cscm:symbol? x)
   (or (cscm:var? x)
       (symbol? x)))
 
-(define (c.scm:pair? x)
-  (and (not (c.scm:var? x))
-       (pair? x)))
-
 (define (cscm:pair? x)
   (and (not (cscm:var? x))
        (pair? x)))
-
-(define (c.scm:var? x)
-  (and (list? x)
-       (= (length x) 7)
-       (symbol? (var-name x))
-       (boolean? (var-funarg x))
-       (boolean? (var-assigned x))
-       (boolean? (var-closed x))
-       (or (boolean? (var-local-fun x))
-           (list? (var-local-fun x)))
-       (or (boolean? (var-local-fun-args x))
-           (list? (var-local-fun-args x)))
-       (list? (var-loc x))))
 
 (define (cscm:var? x)
   (and (list? x)
@@ -222,16 +191,6 @@
 
                           'map 'for-each 'force))
 
-(define (c.scm:primitive? x)
-  (if (memq x *primitive*)
-      #t
-      #f))
-
-(define (c.scm:library? x)
-  (if (memq x *library*)
-      #t
-      #f))
-
 (define (cscm:primitive? x)
   (if (memq x *primitive*)
       #t
@@ -281,12 +240,12 @@
 (load "~/Dropbox/scheme/c.scm/c5hoist.scm")
 (load "~/Dropbox/scheme/c.scm/c6contain-lambda.scm")
 (load "~/Dropbox/scheme/c.scm/c7scheme.scm")
-(load "~/Dropbox/scheme/c.scm/c8-a-normalize.scm")
+(load "~/Dropbox/scheme/c.scm/c8a-normalize.scm")
 (load "~/Dropbox/scheme/c.scm/c9generate.scm")
-(load "~/Dropbox/scheme/c.scm/c10-expand-or-and.scm")
+(load "~/Dropbox/scheme/c.scm/c10or-and.scm")
 (load "~/Dropbox/scheme/c.scm/c12contain-set.scm")
 (load "~/Dropbox/scheme/c.scm/c13-gc.scm")
-(load "~/Dropbox/scheme/c.scm/c14-rename.scm")
+(load "~/Dropbox/scheme/c.scm/c14rename.scm")
 (load "~/Dropbox/scheme/c.scm/c16call-code.scm")
 (load "~/Dropbox/scheme/c.scm/c17replace-cname.scm")
 
@@ -304,7 +263,7 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; ファイルのs式をリストにして返す
-(define (c.scm:expr-lst input)
+(define (expr-lst input)
   (let ((iport (open-input-file input)))
     (let loop ((expr (read iport))
                (lst '()))
@@ -347,7 +306,31 @@
         (let ((sexp (car cscm)))
           (set-car! cscm (c16call-code sexp))
           (loop (cdr cscm)))))
+  (gen-c)
+  (gen-scheme)
   )
+
+(define (compile-file input)
+  (let ((tmp0 *scheme-port*)
+        (tmp1 *c-port*))
+    (set! *scheme-port* (open-output-file (string-append input ".scm")))
+    (set! *c-port* (open-output-file (string-append input ".c")))
+    ;;
+    (let  ((explst (expr-lst input)))
+      (for-each compile-def explst))
+    (replace-cname)
+    (let loop ((cscm *cscm*))
+      (if (null? cscm)
+          #t
+          (let ((sexp (car cscm)))
+            (set-car! cscm (c16call-code sexp))
+            (loop (cdr cscm)))))
+    (gen-c)
+    (gen-scheme)
+    ;;
+    (set! *scheme-port* tmp0)
+    (set! *c-port* tmp1)))
+
 
 (define (replace-cname)
   (let loop ((scheme *scheme*)
@@ -396,120 +379,45 @@
                 (set! *scheme* (cons cexp *scheme*)))
             (loop (cdr cexps)))))))
 
-(define (compile-file input)
-  #t)
-
-(define (cscm? sexp)
-  (not (or (c6contain-lambda? sexp)
-           (c12contain-set!? sexp))))
+(define (cscm? expr)
+  (let ((form (caddr expr)))
+    (if (and (pair? form)
+             (eq? (car form) 'lambda))
+        (not (or (c6contain-lambda? expr)
+                 (c12contain-set!? expr)))
+        #f)))
 
 (define (make-c-name name)
   (string->symbol
    (string-append "c_" (symbol->string name))))    
 
-          
+(define (gen-c)
+  (let loop ((cscm *cscm*))
+    (if (null? cscm)
+        #t
+        (let ((expr (car cscm)))
+          (set-car! cscm (apply-funs expr c7scheme c10or-and c8a-normalize c14rename-def))
+          (loop (cdr cscm)))))
+  (dec-func) ;; 宣言を出力
+  (let loop ((cscm *cscm*))
+    (if (null? cscm)
+        #t
+        (let ((expr (car cscm)))
+          (c9generate expr)
+          (newline *c-port*)
+          (loop (cdr cscm))))))
 
-
-
-
-
-
-
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(define c.scm:*scheme-port* (current-output-port))
-(define c.scm:*c-port* (current-output-port))
-(set! c9*output-port* c.scm:*c-port*)
-
-(define c.scm:*compiled* '())
-(define *toplevel* '()) ;; トップレベル環境
-
-(define (c.scm:compile input)
-  (dlet ((c.scm:*compiled* '())
-         (*toplevel* '()))
-        (if (string? input)
-            (c.scm:compile-file input)
-            (c.scm:compile-sexp input))
-        (if (string? input)
-            (begin (dlet ((c.scm:*scheme-port* (open-output-file (string-append input ".scm")))
-                          (c.scm:*c-port* (open-output-file (string-append input ".c"))))
-                         (set! c9*output-port* c.scm:*c-port*)
-                         (c.scm:generate-code) ;; コード出力
-                         (close-output-port c.scm:*scheme-port*)
-                         (close-output-port c.scm:*c-port*))
-                   (set! c9*output-port* c.scm:*c-port*))
-            (let loop ((compiled c.scm:*compiled*))
-              (if (null? compiled)
-                  (c.scm:generate-code)
-                  (let ((x (c.scm:c16 (car compiled))))
-                    (set-car! compiled x)
-                    (loop (cdr compiled))))))))
-      
-(define (c.scm:compile-sexp input)
-  (let ((x (apply-funs input c0transform c.scm:c1 c3normalize c4close)))
-    (dlet ((c.scm:*c5local-functions* '()))
-          (set! x (c.scm:c5hoist x))
-          (set! c.scm:*c5local-functions* (map c.scm:c15 (cons x c.scm:*c5local-functions*)))
-          (set! c.scm:*compiled* (append c.scm:*c5local-functions* c.scm:*compiled*)))))
-
-
-#;(define (c.scm:compile-sexp input)
-  (let ((x (apply-funs input c.scm:c0transform c.scm:c1 c.scm:c3normalize c.scm:c4close)))
-    (dlet ((c.scm:*c5local-functions* '()))
-          (set! x (c.scm:c5hoist x))
-          (c.scm:generate-code x)
-          (let loop ((local-funs c.scm:*c5local-functions*))
-            (if (null? local-funs)
-                #t
-                (begin (c.scm:generate-code (car local-funs))
-                       (loop (cdr local-funs))))))))
-
-(define (c.scm:generate-code)
-  (letrec ((generate (lambda (x)
-                       (let ((name (cadr x)))
-                         (if (var-cscm name)
-                             (begin (c.scm:c9generate (apply-funs x c7scheme c.scm:c10expand-or-and c.scm:c8a-normalize c.scm:c14rename))
-                                    (newline c.scm:*c-port*))
-                             (begin (display (c.scm:c14rename (c7scheme x)) c.scm:*scheme-port*)
-                                    (newline c.scm:*scheme-port*))))))
-           (loop (lambda (funs)
-                   (if (null? funs)
-                       #t
-                       (begin (generate (car funs))
-                              (loop (cdr funs)))))))
-    (loop c.scm:*compiled*)))
-
-#;(define (c.scm:generate-code x)
-  (if (or (c.scm:c6raw-lambda x)
-          (c.scm:c12assign x)
-          (c.scm:c13gc x))
-              (begin (display (c.scm:c7scheme x) c.scm:*scheme-port*)
-                     (newline c.scm:*scheme-port*))
-              (begin (c.scm:c9generate (apply-funs x c.scm:c7scheme c.scm:c10expand-or-and c.scm:c8a-normalize c.scm:s1list-to-cons c.scm:c14rename))
-                     (newline c.scm:*c-port*))))
-
-;;;;;;;;;;;;;;;;;;;;;;
-
-(define (c.scm:compile-file input)
-  (let ((exp-list (c.scm:expr-lst input)))
-    (for-each c.scm:compile-sexp exp-list)
-    (let loop ((compiled c.scm:*compiled*))
-      (if (null? compiled)
-          #t
-          (let ((x (c.scm:c16 (car compiled))))
-            (set-car! compiled x)
-            (loop (cdr compiled)))))))
-         
-
-#;(define (c.scm:compile-file input)
-  (let ((exp-list (c.scm:expr-lst input)))
-    (dlet ((c.scm:*scheme-port* (open-output-file (string-append input ".scm")))
-           (c.scm:*c-port* (open-output-file (string-append input ".c"))))
-          (set! c9*output-port* c.scm:*c-port*)
-          (for-each c.scm:compile-sexp exp-list)
-          (close-output-port c.scm:*scheme-port*)
-          (close-output-port c.scm:*c-port*))
-    (set! c9*output-port* c.scm:*c-port*)))
-
+(define (gen-scheme)
+  (let loop ((scheme *scheme*))
+    (if (null? scheme)
+        #t
+        (let ((expr (car scheme)))
+          (set-car! scheme (apply-funs expr c7scheme c14rename-def))
+          (loop (cdr scheme)))))
+  (let loop ((scheme *scheme*))
+    (if (null? scheme)
+        #t
+        (let ((expr (car scheme)))
+          (write expr *scheme-port*)
+          (newline *scheme-port*)
+          (loop (cdr scheme))))))

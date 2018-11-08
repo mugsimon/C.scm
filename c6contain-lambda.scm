@@ -28,7 +28,7 @@
     (c6expr body)))
 
 (define (c6def-expr first name expr)
-  (c6expr form))
+  (c6expr expr))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (c6expr form)
@@ -92,14 +92,14 @@
         (body (cadr args)))
     (let ((exps (map cadr defs)))
       (or (c6args exps)
-          (c6body)))))
+          (c6expr body)))))
                    
 (define (c6letrec args)
   (let ((defs (car args))
         (body (cadr args)))
     (let ((exps (map cadr defs)))
       (or (c6args exps)
-          (c6body)))))
+          (c6expr body)))))
 
 (define (c6set! args)
   (let ((var (car args))

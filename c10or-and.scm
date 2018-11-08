@@ -84,7 +84,7 @@
         ((null? (cdr args))
          (car args))
         ((null? (cddr args))
-         (let ((tmp (newvar)))
+         (let ((tmp (newvar "or")))
            `(let ((,tmp ,(c10expr (car args))))
               (if ,tmp
                   ,tmp
@@ -105,28 +105,12 @@
     (list 'lambda params (c10expr body))))
 
 (define (c10let args)
-  (if (c.scm:var? (car args))
-      (c10named-let args)
-      (let loop ((defs (car args))
-                 (cdefs '()))
-        (cond ((null? defs)
-               (if (null? cdefs)
-                   (c10expr (cadr args))
-                   `(let ,(reverse cdefs) ,(c10expr (cadr args)))))
-              (else
-               (let ((def (car defs)))
-                 (loop (cdr defs)
-                       (cons (list (car def)
-                                   (c10expr (cadr def)))
-                             cdefs))))))))
-
-(define (c10named-let args)
-  (let loop ((defs (cadr args))
+  (let loop ((defs (car args))
              (cdefs '()))
     (cond ((null? defs)
-           (let ((var (car args))
-                 (body (caddr args)))
-             `(let ,var ,(reverse cdefs) ,(c10expr body))))
+           (if (null? cdefs)
+               (c10expr (cadr args))
+               `(let ,(reverse cdefs) ,(c10expr (cadr args)))))
           (else
            (let ((def (car defs)))
              (loop (cdr defs)
