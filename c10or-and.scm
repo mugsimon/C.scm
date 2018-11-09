@@ -90,7 +90,7 @@
                   ,tmp
                   ,(c10expr (cadr args))))))
         (else
-         (let ((tmp (newvar)))
+         (let ((tmp (newvar "or")))
            `(let ((,tmp ,(c10expr (car args))))
               (if ,tmp
                   ,tmp

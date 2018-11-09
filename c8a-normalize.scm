@@ -107,14 +107,22 @@
                                   ,(c8normalize-term m2)
                                   ,(c8normalize-term m3))))))))
 
+;;(define c8set!
+;;  (lambda (args k)
+;;    (let ((var (car args))
+;;          (exp (cadr args)))
+;;      (c8normalize-name exp
+;;                        (lambda (aexp)
+;;                          `(let ((,(newvar "set!_") (set! ,var ,aexp)))
+;;                             ,(k aexp)))))))
+
 (define c8set!
   (lambda (args k)
     (let ((var (car args))
           (exp (cadr args)))
       (c8normalize-name exp
                         (lambda (aexp)
-                          `(let ((,(newvar "set!_") (set! ,var ,aexp)))
-                             ,(k aexp)))))))
+                          (k `(set! ,var ,aexp)))))))
 
 (define c8begin
   (lambda (args k)
