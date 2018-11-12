@@ -100,7 +100,7 @@
         ((cscm:pair? form)
          (let ((fun (car form))
                (args (cdr form)))
-           (cond ((c.scm:symbol? fun)
+           (cond ((cscm:symbol? fun)
                   (case fun
                     ((if) (c16if args))
                     ((and) (c16and args))
@@ -125,7 +125,8 @@
            (else (c16constant form))))))
 
 ;; (f args)
-(define (c16symbol-fun name args)  
+(define (c16symbol-fun name args)
+  ;;(print "cscm:debug, c16symbol-fun, name -> " name) ;; debug
   (cond ((or (and *cflag* ;; 自分がC
                   (cscm:var? name) ;; 呼び出し対象がトップレベル（もとからグローバル）ではない
                   (var-local-fun name) ;; ホイストされている
@@ -140,7 +141,13 @@
              ((0) `(cscm_apply0 (cscm_gvref ,name) ,@(c16args args)))
              ((1) `(cscm_apply1 (cscm_gvref ,name) ,@(c16args args)))
              ((2) `(cscm_apply2 (cscm_gvref ,name) ,@(c16args args)))
-             ((3) `(cscm_apply3 (cscm_gvref ,name) ,@(c16args args))))))
+             ((3) `(cscm_apply3 (cscm_gvref ,name) ,@(c16args args)))
+             ((4) `(cscm_apply4 (cscm_gvref ,name) ,@(c16args args)))
+             ((5) `(cscm_apply5 (cscm_gvref ,name) ,@(c16args args)))
+             ((6) `(cscm_apply6 (cscm_gvref ,name) ,@(c16args args)))
+             ((7) `(cscm_apply7 (cscm_gvref ,name) ,@(c16args args)))
+             (else
+              (error "CSCM:ERROR, c16symbol-fun, too many argument" n)))))
         ((and *cflag* ;; 自分がC
               (cscm:var? name) ;; 呼び出し対象がトップレベルではない
               (not (var-local-fun name)) ;; ホイストされていない
@@ -150,7 +157,13 @@
              ((0) `(cscm_apply0 ,name ,@(c16args args)))
              ((1) `(cscm_apply1 ,name ,@(c16args args)))
              ((2) `(cscm_apply2 ,name ,@(c16args args)))
-             ((3) `(cscm_apply3 ,name ,@(c16args args))))))
+             ((3) `(cscm_apply3 ,name ,@(c16args args)))
+             ((4) `(cscm_apply4 ,name ,@(c16args args)))
+             ((5) `(cscm_apply5 ,name ,@(c16args args)))
+             ((6) `(cscm_apply6 ,name ,@(c16args args)))
+             ((7) `(cscm_apply7 ,name ,@(c16args args)))
+             (else
+              (error "CSCM:ERROR, c16symbol-fun, too many argument" n)))))
         (else
          `(,name ,@(c16args args)))))
 

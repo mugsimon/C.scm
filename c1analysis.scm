@@ -176,7 +176,7 @@
       ;;
       (do ((vl (car lambda-expr) (cdr vl)))
           ((not (pair? vl))
-           (if (not (null? vl))
+           (if (not (null? vl)) ;; paramsがsymbol単体のとき
                (let ((var (make-var vl)))
                  (set! *env* (cons var *env*))
                  (set! rest var)))
@@ -186,14 +186,15 @@
                                ((null? requireds)
                                 rest)
                                ((null? rest)
-                                requireds)
+                                (reverse requireds))
                                (else
-                                (let loop ((res req))
-                                  (cond ((null? (cdr res))
-                                         (set-cdr! res rest)
-                                         req)
-                                        (else
-                                         (loop (cdr res)))))))))
+                                (let ((req (reverse requireds)))
+                                  (let loop ((res req))
+                                    (cond ((null? (cdr res))
+                                           (set-cdr! res rest)
+                                           req)
+                                          (else
+                                           (loop (cdr res))))))))))
              (set! ret (list params (c1body (cdr lambda-expr))))))
         (let ((var (make-var (car vl))))
           (set! requireds (cons var requireds))

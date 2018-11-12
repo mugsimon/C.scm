@@ -224,12 +224,12 @@
 (load "c5hoist.scm")
 (load "c6contain-lambda.scm")
 (load "c7scheme.scm")
-(load "c8-a-normalize.scm")
-(load "c9-generate.scm")
-(load "c10-expand-or-and.scm")
+(load "c8a-normalize.scm")
+(load "c9generate.scm")
+(load "c10or-and.scm")
 (load "c12contain-set.scm")
-(load "c13-gc.scm")
-(load "c14-rename.scm")
+;;(load "c13-gc.scm")
+(load "c14rename.scm")
 (load "c16call-code.scm")
 (load "c17replace-cname.scm")
 |#
@@ -244,7 +244,7 @@
 (load "~/Dropbox/scheme/c.scm/c9generate.scm")
 (load "~/Dropbox/scheme/c.scm/c10or-and.scm")
 (load "~/Dropbox/scheme/c.scm/c12contain-set.scm")
-(load "~/Dropbox/scheme/c.scm/c13-gc.scm")
+;;(load "~/Dropbox/scheme/c.scm/c13-gc.scm")
 (load "~/Dropbox/scheme/c.scm/c14rename.scm")
 (load "~/Dropbox/scheme/c.scm/c16call-code.scm")
 (load "~/Dropbox/scheme/c.scm/c17replace-cname.scm")
@@ -300,12 +300,14 @@
 (define (compile-sexp input)
   (compile-def input)
   (replace-cname)
+  ;;((lambda (s x) (display s) (write x) (newline))  "cscm:debug, compile-sexp, *cscm* -> " *cscm*) ;; debug
   (let loop ((cscm *cscm*))
     (if (null? cscm)
         #t
         (let ((sexp (car cscm)))
           (set-car! cscm (c16call-code sexp))
           (loop (cdr cscm)))))
+  ;;((lambda (s x) (display s) (write x) (newline))  "cscm:debug, compile-sexp, *cscm* -> " *cscm*) ;; debug
   (gen-c)
   (gen-scheme)
   )
@@ -318,6 +320,7 @@
     ;;
     (let  ((explst (expr-lst input)))
       (for-each compile-def explst))
+    ;;(print "cscm:debug, compile-file, *rename-alist* -> " *rename-alist*) ;; debug
     (replace-cname)
     (let loop ((cscm *cscm*))
       (if (null? cscm)
@@ -327,32 +330,26 @@
             (loop (cdr cscm)))))
     (gen-c)
     (gen-scheme)
+    ;;((lambda (s x) (display s) (write x) (newline))  "cscm:debug, compile-file, *cscm* -> " *cscm*) ;; debug
     ;;
     (set! *scheme-port* tmp0)
     (set! *c-port* tmp1)))
 
 
 (define (replace-cname)
-  (let loop ((scheme *scheme*)
-             (cscm *cscm*))
-    (cond ((and (null? scheme)
-                (null? cscm))
-           #t)
-          ((null? scheme)
-           (let ((sexp (car cscm)))
-             (set-car! cscm (c17replace-cname sexp)))
-           (loop scheme 
-                 (cdr cscm)))
-          ((null? cscm)
-           (let ((sexp (car scheme)))
-             (set-car! scheme (c17replace-cname sexp)))
-           (loop (cdr scheme)
-                 cscm))
-          (else
-           (let ((sexp (car scheme)))
-             (set-car! scheme (c17replace-cname sexp)))
-           (loop (cdr scheme)
-                 cscm)))))
+  (letrec ((loop1 (lambda (scheme)
+                    (if (null? scheme)
+                        (loop2 *cscm*)
+                        (let ((expr (car scheme)))
+                          (set-car! scheme (c17replace-cname expr))
+                          (loop1 (cdr scheme))))))
+           (loop2 (lambda (cscm)
+                    (if (null? cscm)
+                        #t
+                        (let ((expr (car cscm)))
+                          (set-car! cscm (c17replace-cname expr))
+                          (loop2 (cdr cscm)))))))
+    (loop1 *scheme*)))
 
 ;; トップレベルの定義を受け取り、ホイストまで行う
 ;; CとSchemeを判断し、*scheme*と*cscm*に格納する
@@ -363,7 +360,7 @@
           (let ((name (cadr topexp)))
             (let ((cname (make-c-name name)))
               (set-car! (cdr topexp) cname)
-              (set! *rename-alist* (cons name cname))
+              (set! *rename-alist* (cons (cons name cname) *rename-alist*))
               (set! *cscm* (cons topexp *cscm*))))
           (set! *scheme* (cons topexp *scheme*))))
     (let loop ((cexps (cdr cexps)))
@@ -398,6 +395,7 @@
         (let ((expr (car cscm)))
           (set-car! cscm (apply-funs expr c7scheme c10or-and c8a-normalize c14rename-def))
           (loop (cdr cscm)))))
+  (init-func) ;; 初期化コードを出力
   (dec-func) ;; 宣言を出力
   (let loop ((cscm *cscm*))
     (if (null? cscm)

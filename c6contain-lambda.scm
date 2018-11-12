@@ -23,9 +23,21 @@
          (error "CSCM:ERROR, c6contain-lambda?, not a definition" x)))
       (error "CSCM:ERROR, c6contain-lambda?, not a definition" x)))
 
+;;(define (c6def-func first name lambda-expr)
+;;  (let ((body (caddr lambda-expr)))
+;;    (c6expr body)))
+
+;; 試験導入引数が6個以上のときはSchemeにする
 (define (c6def-func first name lambda-expr)
-  (let ((body (caddr lambda-expr)))
-    (c6expr body)))
+  (let ((params (cadr lambda-expr))
+        (body (caddr lambda-expr)))
+    (let ((n (if (or (null? params)
+                     (pair? params))
+                 (length params)
+                 1)))
+      (if (> n 5)
+          #t
+          (c6expr body)))))
 
 (define (c6def-expr first name expr)
   (c6expr expr))
@@ -48,6 +60,8 @@
                     ((letrec) (c6letrec args))
                     ((set!) (c6set! args))
                     ((quote) (c6quote args))
+                    ((list) #t) ;; 試験導入
+                    ((map) #t) ;;試験導入
                     (else
                      (c6symbol-fun fun args))))
                  (else
@@ -106,8 +120,18 @@
         (exp (cadr args)))
   (c6expr exp)))
 
+;;(define (c6quote args)
+;;  #f)
+
+
 (define (c6quote args)
-  #f)
+  (let ((x (car args)))
+    ;;(print "cscm:debug, c6quote, args -> " args) ;; debug
+    (if (or (cscm:self-eval? x)
+            (symbol? x)
+            (null? x))
+        #f
+        #t)))
 
 (define (c6symbol-fun fun args)
   (c6args args))
