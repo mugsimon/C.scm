@@ -332,6 +332,8 @@
     (gen-scheme)
     ;;((lambda (s x) (display s) (write x) (newline))  "cscm:debug, compile-file, *cscm* -> " *cscm*) ;; debug
     ;;
+    (close-output-port *scheme-port*)
+    (close-output-port *c-port*)
     (set! *scheme-port* tmp0)
     (set! *c-port* tmp1)))
 
@@ -419,3 +421,11 @@
           (write expr *scheme-port*)
           (newline *scheme-port*)
           (loop (cdr scheme))))))
+
+(define (apply-c0 input)
+  (if (string? input)
+      (let ((exps (expr-lst input)))
+        (for-each (lambda (x) (write x) (newline))
+                  (reverse (map c0transform exps))))))
+
+        
