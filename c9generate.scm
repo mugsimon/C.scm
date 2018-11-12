@@ -90,7 +90,8 @@
           (let ((name (cadr expr))
                 (lambda-expr (caddr expr)))
             (let ((params (cadr lambda-expr)))
-              (let ((n (if (pair? params)
+              (let ((n (if (or (pair? params)
+                               (null? params))
                            (length params)
                            1)))
                 (case n
