@@ -30,7 +30,9 @@
         (tmp1 *c5name*)
         (ret #f))
     (set! *c5hoisted-funs* '())
-    (set! *c5name* (symbol->string name))
+    (set! *c5name* (if (cscm:var? name)
+                       (symbol->string (var-name name))
+                       (symbol->string name)))
     ;;
     (let ((x (c5expr lambda-expr)))
       (set! ret (cons `(,first ,name ,x) *c5hoisted-funs*)))
@@ -44,7 +46,9 @@
         (tmp1 *c5name*)
         (ret #f))
     (set! *c5hoisted-funs* '())
-    (set! *c5name* (symbol->string name))
+    (set! *c5name* (if (cscm:var? name)
+                       (symbol->string (var-name name))
+                       (symbol->string name)))
     ;;
     (let ((x (c5expr expr)))
       (set! ret (cons `(,first ,name ,x) *c5hoisted-funs*)))
@@ -148,6 +152,7 @@
       (let ((newname (string->symbol (string-append t "_" *c5name* "_" name))))
         (set-var-name var newname)
         (set! *c5hoisted-funs* (cons (cons 'define def) *c5hoisted-funs*))))))
+
 (define (c5hoist-fun def)
   (let ((var (car def))
         (exp (cadr def)))
@@ -155,9 +160,9 @@
           (t (symbol->string (newvar))))
       (let ((newname (string->symbol (string-append t "_" *c5name* "_" name))))
         (set-var-name var newname)
-        (let ((hoisted-fun (cons 'define def)))
-          (let ((hoisted-funs 0))))))))
-                               
+        (let ((hoisted-funs (c5def-func 'define var exp)))
+        (set! *c5hoisted-funs* (append hoisted-funs  *c5hoisted-funs*)))))))
+  
         
 (define (c5letrec args)
   (let loop ((defs (car args))
