@@ -339,7 +339,9 @@
 (define (c9set! x r)
   (let ((var (car x))
         (exp (cadr x)))
-    (c9print var " = " exp ";"))) ;; set!式が式の戻り値の場合は?
+    (c9print var " = " exp ";")
+    (if (return? r)
+        (c9print "return (" exp ");")))) ;; set!式が式の戻り値の場合は?
 
 (define (c9quote x r)
   (cond ((return? r)

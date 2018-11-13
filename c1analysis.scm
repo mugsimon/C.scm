@@ -427,6 +427,7 @@
         (form (cadr args)))
     (let lookup ((env *env*)
                  (ccb #f))
+      (print "cscm:debug, c1set!, env->" env) ;; debug
       (if (null? env)
           (list 'set! name (c1expr form))
           (let ((var (car env)))
