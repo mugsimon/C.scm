@@ -427,16 +427,18 @@
         (form (cadr args)))
     (let lookup ((env *env*)
                  (ccb #f))
-      (print "cscm:debug, c1set!, env->" env) ;; debug
+      ;;(print "cscm:debug, c1set!, env->" env) ;; debug
       (if (null? env)
           (list 'set! name (c1expr form))
           (let ((var (car env)))
-            (cond ((eq? var 'CB) (lookup (cdr env) #t))
+            (cond ((eq? var 'CB)
+                   (lookup (cdr env) #t))
                   ((eq? (var-name var) name)
                    (if ccb (set-var-closed var #t))
                    (set-var-assigned var #t)
                    (list 'set! var (c1expr form)))
-                  (else (lookup (cdr env) ccb))))))))
+                  (else
+                   (lookup (cdr env) ccb))))))))
 
 (define (end? x)
   (cond ((pair? x) #f) 
