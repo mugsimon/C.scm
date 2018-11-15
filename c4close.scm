@@ -107,7 +107,7 @@
 (define (c4def def)
   (let ((var (car def))
         (form (cadr def)))
-    (list var (if (var-local-fun var)
+    (list var (if (var-liftable var) ;;(var-local-fun var)
                   (c4lambda (cdr form) (var-local-fun var))
                   (c4expr form)))))
 
@@ -131,7 +131,8 @@
 
 (define (c4symbol-fun fun args)
   (if (and (cscm:var? fun)
-           (var-local-fun fun))
+           (var-liftable fun))
+           ;;(var-local-fun fun))
       `(,fun ,@(var-local-fun fun) ,@(c4args args)) ;; ローカル関数呼び出し
       `(,fun ,@(c4args args))))
 

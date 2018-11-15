@@ -127,14 +127,16 @@
                             (cons 'number? "CSCM_NUMBER_P")
                             (cons '= "CSCM_EQUAL") (cons '< "CSCM_LESS") (cons '> "CSCM_MORE") (cons '<= "CSCM_LESSE") (cons '>= "CSCM_MOREE")
                             (cons '+ "CSCM_PLUS") (cons '* "CSCM_TIMES") (cons '- "CSCM_MINUS") (cons '/ "CSCM_DIFF")
+                            (cons 'modulo "CSCM_MODULO") (cons 'mod "CSCM_MODULO");;
+                            (cons 'number->string "CSCM_NUMBER2STRING")
                             (cons 'pair? "CSCM_PAIR_P") (cons 'cons "CSCM_CONS") (cons 'car "CSCM_CAR") (cons 'cdr "CSCM_CDR") (cons 'set-car! "CSCM_SETCAR_B") (cons 'set-cdr! "CSCM_SETCDR_B")
                             (cons 'caar "CSCM_CAAR") (cons 'cadr "CSCM_CADR") (cons 'cddr "CSCM_CDDR")
                             (cons 'symbol? "CSCM_SYMBOL_P") (cons 'symbol->string "CSCM_SYMBOL2STRING") (cons 'string->symbol "CSCM_STRING2SYMBOL")
-                            (cons 'string? "CSCM_STRING_P")
+                            (cons 'string? "CSCM_STRING_P") (cons 'string-ref "CSCM_STRING_REF")
                             (cons 'apply "CSCM_APPLY")
                             ;;; cscm apply
                             (cons 'cscm_apply0 "CSCM_APPLY0") (cons 'cscm_apply1 "CSCM_APPLY1") (cons 'cscm_apply2 "CSCM_APPLY2") (cons 'cscm_apply3 "CSCM_APPLY3")
-                            (cons 'cscm_apply4 "CSCM_APPLY4")
+                            (cons 'cscm_apply4 "CSCM_APPLY4") (cons 'cscm_apply5 "CSCM_APPLY5") (cons 'cscm_apply6 "CSCM_APPLY6") (cons 'cscm_apply7 "CSCM_APPLY7")
                             ;;; library
                             (cons 'equal? "CSCM_EQUAL_P")
                             (cons 'not "CSCM_NOT")
@@ -337,7 +339,9 @@
 (define (c9set! x r)
   (let ((var (car x))
         (exp (cadr x)))
-    (c9print var " = " exp ";"))) ;; set!式が式の戻り値の場合は?
+    (c9print var " = " exp ";")
+    (if (return? r)
+        (c9print "return (" exp ");")))) ;; set!式が式の戻り値の場合は?
 
 (define (c9quote x r)
   (cond ((return? r)
