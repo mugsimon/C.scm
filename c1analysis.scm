@@ -221,7 +221,7 @@
 (define (var-local-fun var) (car (cddddr var)))
 (define (var-local-fun-args var) (cadr (cddddr var)))
 (define (var-loc var) (caddr (cddddr var)))
-(define (var-hoistable var) (cadddr (cddddr var))) ;;ホイスト可能か
+(define (var-liftable var) (cadddr (cddddr var))) ;; ラムダリフティング可能か
 
 (define (set-var-name var x) (set-car! var x))
 (define (set-var-funarg var x) (set-car! (cdr var) x))
@@ -230,7 +230,7 @@
 (define (set-var-local-fun var x) (set-car! (cddddr var) x))
 (define (set-var-local-fun-args var x) (set-car! (cdr (cddddr var)) x))
 (define (set-var-loc var x) (set-car! (cddr (cddddr var)) x))
-(define (set-var-hoistable var x) (set-car! (cdddr (cddddr var)) x)) ;; ホイスト可能か
+(define (set-var-liftable var x) (set-car! (cdddr (cddddr var)) x)) ;; ラムダリフティング可能か
 
 (define *env* '())
 
