@@ -240,7 +240,7 @@
             '()
             (let ((def (car lst)))
               (let ((var (car def)))
-                (set! *evn* (cons var *env*)))
+                (set! *env* (cons var *env*)))
               (dolist (cdr lst)))))
       (c3body body)
 
@@ -283,7 +283,7 @@
                        (lookup (cdr env) #t))
                       ((eq? (var-name var) (var-name name))
                        (if ccb (set! *liftable* #f))
-                       (list 'set! var (c3expr)))
+                       (list 'set! var (c3expr form)))
                       (else
                        (lookup (cdr env) ccb))))))
         (list set! name (c3expr form)))))
