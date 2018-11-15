@@ -277,7 +277,7 @@
         (let lookup ((env *env*)
                      (ccb #f))
           (if (null? env)
-              (error "CSCM:ERROR, c3set!, ローカル変数が見つかりません")
+              (error "CSCM:ERROR, c3set!, 致命的なエラーです. ローカル変数が見つかりません")
               (let ((var (car env)))
                 (cond ((eq? var 'CB)
                        (lookup (cdr env) #t))
@@ -287,15 +287,3 @@
                       (else
                        (lookup (cdr env) ccb))))))
         (list set! name (c3expr form)))))
-
-
-                   
-          
-
-
-      
-      
-
-
-    
-      

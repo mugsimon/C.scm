@@ -174,7 +174,7 @@
           (else
            (let ((var (caar defs))
                  (form (cadar defs)))
-             (if (var-liftable (car def)) ;;(var-local-fun var)
+             (if (var-liftable var) ;;(var-local-fun var)
                  (begin (c5hoist-fun (car defs))
                         (loop (cdr defs)
                               cdefs))
