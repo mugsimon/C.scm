@@ -211,7 +211,7 @@
       (if (member name '(if cond case and or begin lambda delay let let* 
                             letrec do set! quote quasiquote define macro))
           (error "CSCM:ERROR, cannot bind the keyword" name)
-          (list name #f #f #f #f '() '()))
+          (list name #f #f #f #f '() '() #f)) ;; 
       (error "CSCM:ERROR, not a symbol" name)))
 
 (define (var-name var) (car var))
@@ -221,6 +221,7 @@
 (define (var-local-fun var) (car (cddddr var)))
 (define (var-local-fun-args var) (cadr (cddddr var)))
 (define (var-loc var) (caddr (cddddr var)))
+(define (var-liftable var) (cadddr (cddddr var))) ;; ラムダリフティング可能か
 
 (define (set-var-name var x) (set-car! var x))
 (define (set-var-funarg var x) (set-car! (cdr var) x))
@@ -229,6 +230,7 @@
 (define (set-var-local-fun var x) (set-car! (cddddr var) x))
 (define (set-var-local-fun-args var x) (set-car! (cdr (cddddr var)) x))
 (define (set-var-loc var x) (set-car! (cddr (cddddr var)) x))
+(define (set-var-liftable var x) (set-car! (cdddr (cddddr var)) x)) ;; ラムダリフティング可能か
 
 (define *env* '())
 

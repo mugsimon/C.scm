@@ -91,7 +91,7 @@
 
 (define (cscm:var? x)
   (and (list? x)
-       (= (length x) 7)
+       (= (length x) 8)
        (symbol? (var-name x))
        (boolean? (var-funarg x))
        (boolean? (var-assigned x))
@@ -100,7 +100,8 @@
            (list? (var-local-fun x)))
        (or (boolean? (var-local-fun-args x))
            (list? (var-local-fun-args x)))
-       (list? (var-loc x))))
+       (list? (var-loc x))
+       (boolean? (var-liftable x))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 新しい変数を用意する
@@ -248,6 +249,7 @@
 (load "~/Dropbox/scheme/c.scm/c14rename.scm")
 (load "~/Dropbox/scheme/c.scm/c16call-code.scm")
 (load "~/Dropbox/scheme/c.scm/c17replace-cname.scm")
+(load "~/Dropbox/scheme/c.scm/c3liftable.scm")
 
 
 
@@ -356,7 +358,7 @@
 ;; トップレベルの定義を受け取り、ホイストまで行う
 ;; CとSchemeを判断し、*scheme*と*cscm*に格納する
 (define (compile-def input)
-  (let ((cexps (apply-funs input c0transform c1analysis c4close c5hoist))) ;; 先頭にトップレベル定義, 残りにホイストされたローカル関数
+  (let ((cexps (apply-funs input c0transform c1analysis c3liftable c4close c5hoist))) ;; 先頭にトップレベル定義, 残りにホイストされたローカル関数
     (let ((topexp (car cexps)))
       (if (cscm? topexp)
           (let ((name (cadr topexp)))
