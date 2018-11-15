@@ -118,7 +118,7 @@
       (cons (c3expr (car forms)) (c3args (cdr forms)))))
 
 (define (c3begin forms)
-  `(begin ,@(c3map c3expr forms)))
+  `(begin ,@(map c3expr forms)))
 
 (define (c3body body)
   (c3expr (car body)))
