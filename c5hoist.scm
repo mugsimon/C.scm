@@ -117,7 +117,7 @@
                `(let ,(reverse cdefs) ,(c5expr (cadr args)))))
           (else
            (let ((def (car defs)))
-             (if (var-local-fun (car def))
+             (if (var-liftable (car def)) ;;(var-local-fun (car def))
                  (begin (c5hoist-fun def)
                         (loop (cdr defs)
                               cdefs))
@@ -135,7 +135,7 @@
                `(let* ,(reverse cdefs) ,(c5expr (cadr args)))))
           (else
            (let ((def (car defs)))
-             (if (var-local-fun (car def))
+             (if (var-liftable (car def)) ;;(var-local-fun (car def))
                  (begin (c5hoist-fun def)
                         (loop (cdr defs)
                               cdefs))
@@ -174,7 +174,7 @@
           (else
            (let ((var (caar defs))
                  (form (cadar defs)))
-             (if (var-local-fun var)
+             (if (var-liftable (car def)) ;;(var-local-fun var)
                  (begin (c5hoist-fun (car defs))
                         (loop (cdr defs)
                               cdefs))
