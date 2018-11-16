@@ -81,6 +81,7 @@
 ;;; SCEVAL  The Expression Dispatcher.
 
 (define (c3expr form)
+  ;;(print "cscm:debug, c3expr, form->" form) ;; debug
   (cond ((cscm:symbol? form)
          (c3vref form))
         ((cscm:pair? form)
@@ -121,7 +122,7 @@
   `(begin ,@(map c3expr forms)))
 
 (define (c3body body)
-  (c3expr (car body)))
+  (c3expr body))
 
 
 ;;; SCFUNC  Lambda Expression.
@@ -157,7 +158,7 @@
              (let ((var vl))
                (set! *env* (cons var *env*)))
              (let ((params (car lambda-expr)))
-               (set! ret (list params (c3body (cdr lambda-expr)))))))
+               (set! ret (list params (c3body (cadr lambda-expr)))))))
       (let ((var (car vl)))
         (set! *env* (cons var *env*))))
     ;;
@@ -172,6 +173,7 @@
 (define (c3set-liftable def)
   (let ((var (car def))
         (exp (cadr def)))
+    ;;(print "cscm:debug, c3set-liftable, var->" var) ;; debug
     (if (var-local-fun var)
         (let ((tmp *liftable*))
           (set! *liftable* #t)
@@ -179,7 +181,8 @@
           (c3expr exp)
           (set-var-liftable var *liftable*)
           ;;
-          (set! *liftable* tmp)))))
+          (set! *liftable* tmp))
+        (c3expr exp))))
 
 (define (c3let args)
   (let ((defs (car args))
@@ -196,7 +199,7 @@
       (c3body body)
       ;;
       (set! *env* tmp))
-
+    
     (let dolist ((lst defs))
       (if (null? lst)
           '()
