@@ -188,7 +188,8 @@
   (let ((var (car def))
         (exp (cadr def)))
     ;;(print "cscm:debug, c3set-liftable, var->" var) ;; debug
-    (if (eq? (car exp) 'lambda)
+    (if (and (pair? exp)
+             (eq? (car exp) 'lambda))
         (if (var-local-fun var)
             (let ((tmp *liftable*))
               (set! *liftable* #t)

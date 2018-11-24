@@ -63,6 +63,7 @@
                     ((list) #t) ;; 試験導入
                     ((map) #t) ;;試験導入
                     ((apply) #t) ;;試験導入
+                    ;;((assq) #t) ;; browseのmy-matchがCにならないように
                     (else
                      (c6symbol-fun fun args))))
                  (else
