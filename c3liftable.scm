@@ -168,21 +168,41 @@
 
 ;;; SCLETS  Let, Let*, and Letrec.
 
-(define *liftable* #t)
+(define *liftable* #f)
+
+;;(define (c3set-liftable def)
+;;  (let ((var (car def))
+;;        (exp (cadr def)))
+    ;;(print "cscm:debug, c3set-liftable, var->" var) ;; debug
+;;    (if (var-local-fun var)
+;;        (let ((tmp *liftable*))
+;;          (set! *liftable* #t)
+          ;;
+;;          (c3expr exp)
+;;          (set-var-liftable var *liftable*)
+          ;;
+;;          (set! *liftable* tmp))
+;;        (c3expr exp))))
 
 (define (c3set-liftable def)
   (let ((var (car def))
         (exp (cadr def)))
     ;;(print "cscm:debug, c3set-liftable, var->" var) ;; debug
-    (if (var-local-fun var)
-        (let ((tmp *liftable*))
-          (set! *liftable* #t)
-          ;;
-          (c3expr exp)
-          (set-var-liftable var *liftable*)
-          ;;
-          (set! *liftable* tmp))
-        (c3expr exp))))
+    (if (eq? (car exp) 'lambda)
+        (if (var-local-fun var)
+            (let ((tmp *liftable*))
+              (set! *liftable* #t)
+              ;;
+              (c3expr exp) ;; 自由変数への代入, ノンリフタブルなローカル関数とクロージャーを持たないか検査
+              (if *liftable* 
+                  (set-var-liftable var *liftable*)) ;; リフタブル
+              ;;
+              (if *liftable*
+                  (set! *liftable* tmp)
+                  (set! *liftable* #f)))
+            (begin (c3expr exp)
+                   (set! *liftable* #f)))
+        (c3expr exp)))) 
 
 (define (c3let args)
   (let ((defs (car args))
@@ -285,7 +305,7 @@
                 (cond ((eq? var 'CB)
                        (lookup (cdr env) #t))
                       ((eq? (var-name var) (var-name name))
-                       (if ccb (set! *liftable* #f))
+                       (if ccb (set! *liftable* #f)) ;; 自由変数へのset!があるならリフタブルではない
                        (list 'set! var (c3expr form)))
                       (else
                        (lookup (cdr env) ccb))))))
