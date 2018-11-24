@@ -137,6 +137,7 @@
                             ;;; cscm apply
                             (cons 'cscm_apply0 "CSCM_APPLY0") (cons 'cscm_apply1 "CSCM_APPLY1") (cons 'cscm_apply2 "CSCM_APPLY2") (cons 'cscm_apply3 "CSCM_APPLY3")
                             (cons 'cscm_apply4 "CSCM_APPLY4") (cons 'cscm_apply5 "CSCM_APPLY5") (cons 'cscm_apply6 "CSCM_APPLY6") (cons 'cscm_apply7 "CSCM_APPLY7")
+                            (cons 'cscm_apply8 "CSCM_APPLY8")
                             ;;; library
                             (cons 'equal? "CSCM_EQUAL_P")
                             (cons 'not "CSCM_NOT")

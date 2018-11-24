@@ -62,6 +62,8 @@
                     ((quote) (c6quote args))
                     ((list) #t) ;; 試験導入
                     ((map) #t) ;;試験導入
+                    ((apply) #t) ;;試験導入
+                    ((assq) #t) ;;assqが入るとセグフォ落ちする
                     (else
                      (c6symbol-fun fun args))))
                  (else

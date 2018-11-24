@@ -289,4 +289,4 @@
                        (list 'set! var (c3expr form)))
                       (else
                        (lookup (cdr env) ccb))))))
-        (list set! name (c3expr form)))))
+        (list 'set! name (c3expr form)))))

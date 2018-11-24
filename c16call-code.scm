@@ -146,6 +146,7 @@
              ((5) `(cscm_apply5 (cscm_gvref ,name) ,@(c16args args)))
              ((6) `(cscm_apply6 (cscm_gvref ,name) ,@(c16args args)))
              ((7) `(cscm_apply7 (cscm_gvref ,name) ,@(c16args args)))
+             ((8) `(cscm_apply8 (cscm_gvref ,name) ,@(c16args args)))
              (else
               (error "CSCM:ERROR, c16symbol-fun, too many argument" n)))))
         ((and *cflag* ;; 自分がC
@@ -162,6 +163,7 @@
              ((5) `(cscm_apply5 ,name ,@(c16args args)))
              ((6) `(cscm_apply6 ,name ,@(c16args args)))
              ((7) `(cscm_apply7 ,name ,@(c16args args)))
+             ((8) `(cscm_apply8 ,name ,@(c16args args)))
              (else
               (error "CSCM:ERROR, c16symbol-fun, too many argument" n)))))
         (else
