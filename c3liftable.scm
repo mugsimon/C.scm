@@ -196,13 +196,11 @@
               ;;
               (c3expr exp) ;; 自由変数への代入, ノンリフタブルなローカル関数とクロージャーを持たないか検査
               (if *liftable* 
-                  (set-var-liftable var *liftable*)) ;; リフタブル
-              ;;
-              (if *liftable*
-                  (set! *liftable* tmp)
+                  (begin (set-var-liftable var *liftable*)
+                         ;;
+                         (set! *liftable* tmp)) ;; リフタブル
                   (set! *liftable* #f)))
-            (begin (c3expr exp)
-                   (set! *liftable* #f)))
+            (c3expr exp))
         (c3expr exp)))) 
 
 (define (c3let args)
