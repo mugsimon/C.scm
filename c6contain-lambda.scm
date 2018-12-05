@@ -133,7 +133,7 @@
             (symbol? x)
             (null? x))
         #f
-        #t)))
+        #f)));;#t)))
 
 (define (c6symbol-fun fun args)
   (c6args args))
