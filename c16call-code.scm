@@ -113,6 +113,8 @@
                     ((letrec) (c16letrec args))
                     ((set!) (c16set! args))
                     ((quote) (c16quote args))
+                    ((list) (c16list args))
+                    ((append) (c16append args))
                     (else
                      (c16symbol-fun fun args))))
                  (else
@@ -227,3 +229,30 @@
   (let ((var (car args))
         (exp (cadr args)))
     `(set! ,var ,(c16expr exp))))
+
+;; list
+(define (c16list args)
+  (let ((n (length args)))
+    (case n
+      ((0) `(cscm_apply0 (cscm_gvref list) ,@(c16args args)))
+      ((1) `(cscm_apply1 (cscm_gvref list) ,@(c16args args)))
+      ((2) `(cscm_apply2 (cscm_gvref list) ,@(c16args args)))
+      ((3) `(cscm_apply3 (cscm_gvref list) ,@(c16args args)))
+      ((4) `(cscm_apply4 (cscm_gvref list) ,@(c16args args)))
+      ((5) `(cscm_apply5 (cscm_gvref list) ,@(c16args args)))
+      ((6) `(cscm_apply6 (cscm_gvref list) ,@(c16args args)))
+      ((7) `(cscm_apply7 (cscm_gvref list) ,@(c16args args)))
+      ((8) `(cscm_apply8 (cscm_gvref list) ,@(c16args args))))))
+
+(define (c16append args)
+  (let ((n (length args)))
+    (case n
+      ((0) `(cscm_apply0 (cscm_gvref append) ,@(c16args args)))
+      ((1) `(cscm_apply1 (cscm_gvref append) ,@(c16args args)))
+      ((2) `(cscm_apply2 (cscm_gvref append) ,@(c16args args)))
+      ((3) `(cscm_apply3 (cscm_gvref append) ,@(c16args args)))
+      ((4) `(cscm_apply4 (cscm_gvref append) ,@(c16args args)))
+      ((5) `(cscm_apply5 (cscm_gvref append) ,@(c16args args)))
+      ((6) `(cscm_apply6 (cscm_gvref append) ,@(c16args args)))
+      ((7) `(cscm_apply7 (cscm_gvref append) ,@(c16args args)))
+      ((8) `(cscm_apply8 (cscm_gvref append) ,@(c16args args))))))
