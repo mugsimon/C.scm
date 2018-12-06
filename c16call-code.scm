@@ -115,6 +115,7 @@
                     ((quote) (c16quote args))
                     ((list) (c16list args))
                     ((append) (c16append args))
+                    ((map) (c16map args))
                     (else
                      (c16symbol-fun fun args))))
                  (else
@@ -256,3 +257,16 @@
       ((6) `(cscm_apply6 (cscm_gvref append) ,@(c16args args)))
       ((7) `(cscm_apply7 (cscm_gvref append) ,@(c16args args)))
       ((8) `(cscm_apply8 (cscm_gvref append) ,@(c16args args))))))
+
+(define (c16map args)
+  (let ((n (length args)))
+    (case n
+      ((0) `(cscm_apply0 (cscm_gvref map) ,@(c16args args)))
+      ((1) `(cscm_apply1 (cscm_gvref map) ,@(c16args args)))
+      ((2) `(cscm_apply2 (cscm_gvref map) ,@(c16args args)))
+      ((3) `(cscm_apply3 (cscm_gvref map) ,@(c16args args)))
+      ((4) `(cscm_apply4 (cscm_gvref map) ,@(c16args args)))
+      ((5) `(cscm_apply5 (cscm_gvref map) ,@(c16args args)))
+      ((6) `(cscm_apply6 (cscm_gvref map) ,@(c16args args)))
+      ((7) `(cscm_apply7 (cscm_gvref map) ,@(c16args args)))
+      ((8) `(cscm_apply8 (cscm_gvref map) ,@(c16args args))))))

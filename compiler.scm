@@ -364,7 +364,7 @@
 (define (compile-def input)
   (let ((cexps (apply-funs input c0transform c1analysis c3liftable c4close c5hoist))) ;; 先頭にトップレベル定義, 残りにホイストされたローカル関数
     (let ((topexp (car cexps)))
-      (if (cscm? topexp)
+      (if (cscm? topexp) ;; Cにできるかチェック
           (let ((name (cadr topexp)))
             (let ((cname (make-c-name name)))
               (set-car! (cdr topexp) cname)
@@ -375,7 +375,7 @@
       (if (null? cexps)
           #t
           (let ((cexp (car cexps)))
-            (if (cscm? cexp)
+            (if (cscm? cexp) ;; Cにできるかチェック
                 (let ((var (cadr cexp)))
                   (let ((name (var-name var)))
                     (let ((cname (make-c-name name)))
