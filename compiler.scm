@@ -250,7 +250,7 @@
 (load "~/Dropbox/scheme/c.scm/c16call-code.scm")
 (load "~/Dropbox/scheme/c.scm/c17replace-cname.scm")
 (load "~/Dropbox/scheme/c.scm/c3liftable.scm")
-
+(load "~/Dropbox/scheme/c.scm/c18constant.scm")
 
 
 
@@ -282,14 +282,17 @@
 
 (define *scheme* '())
 (define *cscm* '())
+(define *cscm-constant* '())
 (define *rename-alist* '())
 
 (define (compile input)
   (let ((tmp0 *scheme*)
         (tmp1 *cscm*)
+        (tmp2 *cscm-constant*)
         (ret #f))
     (set! *scheme* '())
     (set! *cscm* '())
+    (set! *cscm-constant* '())
     ;;
     (set! ret (if (string? input)
                   (compile-file input)
@@ -297,6 +300,7 @@
     ;;
     (set! *cscm* tmp1)
     (set! *scheme* tmp0)
+    (set! *cscm-constant* tmp2)
     ret))
 
 (define (compile-sexp input)
@@ -365,7 +369,7 @@
             (let ((cname (make-c-name name)))
               (set-car! (cdr topexp) cname)
               (set! *rename-alist* (cons (cons name cname) *rename-alist*))
-              (set! *cscm* (cons topexp *cscm*))))
+              (set! *cscm* (cons (c18constant topexp) *cscm*))))
           (set! *scheme* (cons topexp *scheme*))))
     (let loop ((cexps (cdr cexps)))
       (if (null? cexps)
@@ -376,7 +380,7 @@
                   (let ((name (var-name var)))
                     (let ((cname (make-c-name name)))
                       (set-var-name var cname)
-                      (set! *cscm* (cons cexp *cscm*)))))
+                      (set! *cscm* (cons (c18constant cexp) *cscm*)))))
                 (set! *scheme* (cons cexp *scheme*)))
             (loop (cdr cexps)))))))
 
@@ -418,11 +422,20 @@
           (loop (cdr scheme)))))
   (let loop ((scheme *scheme*))
     (if (null? scheme)
-        #t
+        (gen-constant)
         (let ((expr (car scheme)))
           (write expr *scheme-port*)
           (newline *scheme-port*)
           (loop (cdr scheme))))))
+
+(define (gen-constant)
+  (let loop ((constant *cscm-constant*))
+    (if (null? constant)
+        #t
+        (let ((expr (car constant)))
+          (write expr *scheme-port*)
+          (newline *scheme-port*)
+          (loop (cdr constant))))))
 
 (define (apply-c0 input)
   (if (string? input)
