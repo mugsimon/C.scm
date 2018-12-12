@@ -137,10 +137,10 @@
 
 (define c8letrec
   (lambda (args k)
-    (let ((defs (car args))
-          (body (cadr args)))
+    (let ((defs (car args)) ;; letrecの定義
+          (body (cadr args))) ;; letrecの本体
       (if (null? defs)
-          (c8normalize body k)
+          (c8normalize body k) ;; 定義がない
           (let ((vars (map car defs))
                 (exps (map cadr defs)))
             (let ((inits (make-list (length vars) #f))
