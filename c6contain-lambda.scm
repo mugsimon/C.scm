@@ -36,7 +36,8 @@
                  (length params)
                  1)))
       (if (> n 5)
-          #t
+          (begin (print "cscm:debug, c6def-func, 引数が6以上の関数定義です") ;; debug
+                 #t)
           (c6expr body)))))
 
 (define (c6def-expr first name expr)
@@ -100,6 +101,7 @@
          (c6args args))))
 
 (define (c6lambda args)
+  (print "cscm:debug, c6lambda, 内部lambda式を発見しました" args) ;; debug
   #t)
 
 (define (c6let args)
