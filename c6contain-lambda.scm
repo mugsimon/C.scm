@@ -27,17 +27,16 @@
 ;;  (let ((body (caddr lambda-expr)))
 ;;    (c6expr body)))
 
-;; 試験導入引数が6個以上のときはSchemeにする
 (define (c6def-func first name lambda-expr)
-  (let ((params (cadr lambda-expr))
-        (body (caddr lambda-expr)))
+  (let ((params (cadr lambda-expr)) ;; lambda式の引数
+        (body (caddr lambda-expr))) ;; lambda式の本体
     (let ((n (if (or (null? params)
-                     (pair? params))
+                     (cscm:pair? params))
                  (length params)
                  1)))
-      (if (> n 5)
-          (begin (print "cscm:debug, c6def-func, 引数が6以上の関数定義です") ;; debug
-                 #t)
+      (if (> n 10)
+          (begin (print "cscm:debug, c6def-func, 引数が暫定10以上の関数定義です: " n) ;; debug
+                 #f);;#t)
           (c6expr body)))))
 
 (define (c6def-expr first name expr)
