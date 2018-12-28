@@ -109,13 +109,14 @@
           (c12expr body)))))
 
 (define (c12set! args)
-  (let ((var (car args))
-        (exp (cadr args)))
+  (let ((var (car args)) ;; 変数
+        (exp (cadr args))) ;; 値
     (if (and (cscm:var? var)
              (var-assigned var)
              (not (var-closed var)))
-        (c12expr exp)
-        #t)))
+        (c12expr exp) ;; クローズされない変数への代入は問題ない
+        (begin (print "cscm:debug, c12set!, 代入を発見しました" args) ;; debug
+               #t))))
 
 (define (c12quote args)
   #f)

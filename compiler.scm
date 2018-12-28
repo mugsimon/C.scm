@@ -251,7 +251,7 @@
 (load "~/Dropbox/scheme/c.scm/c17replace-cname.scm")
 (load "~/Dropbox/scheme/c.scm/c3liftable.scm")
 (load "~/Dropbox/scheme/c.scm/c18constant.scm")
-
+(load "~/Dropbox/scheme/c.scm/c19remove-args.scm")
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;
@@ -364,24 +364,24 @@
 (define (compile-def input)
   (let ((cexps (apply-funs input c0transform c1analysis c3liftable c4close c5hoist))) ;; 先頭にトップレベル定義, 残りにホイストされたローカル関数
     (let ((topexp (car cexps)))
-      (if (cscm? topexp)
+      (if (cscm? topexp) ;; Cにできるかチェック
           (let ((name (cadr topexp)))
             (let ((cname (make-c-name name)))
               (set-car! (cdr topexp) cname)
               (set! *rename-alist* (cons (cons name cname) *rename-alist*))
-              (set! *cscm* (cons (c18constant topexp) *cscm*))))
-          (set! *scheme* (cons topexp *scheme*))))
+              (set! *cscm* (cons (c19remove-args (c18constant topexp)) *cscm*))))
+          (set! *scheme* (cons (c19remove-args topexp) *scheme*))))
     (let loop ((cexps (cdr cexps)))
       (if (null? cexps)
           #t
           (let ((cexp (car cexps)))
-            (if (cscm? cexp)
+            (if (cscm? cexp) ;; Cにできるかチェック
                 (let ((var (cadr cexp)))
                   (let ((name (var-name var)))
                     (let ((cname (make-c-name name)))
                       (set-var-name var cname)
-                      (set! *cscm* (cons (c18constant cexp) *cscm*)))))
-                (set! *scheme* (cons cexp *scheme*)))
+                      (set! *cscm* (cons (c19remove-args (c18constant cexp)) *cscm*)))))
+                (set! *scheme* (cons (c19remove-args cexp) *scheme*)))
             (loop (cdr cexps)))))))
 
 (define (cscm? expr)

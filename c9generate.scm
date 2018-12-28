@@ -17,6 +17,12 @@
 (define c9subr_3 "CSCM_SUBR_3")
 (define c9subr_4 "CSCM_SUBR_4")
 (define c9subr_5 "CSCM_SUBR_5")
+;; 追加の関数定義
+(define c9subr_6 "CSCM_SUBR_6")
+(define c9subr_7 "CSCM_SUBR_7")
+(define c9subr_8 "CSCM_SUBR_8")
+(define c9subr_9 "CSCM_SUBR_9")
+(define c9subr_10 "CSCM_SUBR_10") 
 
 (define (c9print . a)
   (let loop ((a a))
@@ -119,6 +125,27 @@
                    (c9display c9subr_5 "(")
                    (c9write (symbol->string name))
                    (c9print ", " name ");"))
+                  ;; 追加の関数定義
+                  ((6)
+                   (c9display c9subr_6 "(")
+                   (c9write (symbol->string name))
+                   (c9print ", " name ");"))
+                  ((7)
+                   (c9display c9subr_7 "(")
+                   (c9write (symbol->string name))
+                   (c9print ", " name ");"))
+                  ((8)
+                   (c9display c9subr_8 "(")
+                   (c9write (symbol->string name))
+                   (c9print ", " name ");"))
+                  ((9)
+                   (c9display c9subr_9 "(")
+                   (c9write (symbol->string name))
+                   (c9print ", " name ");"))
+                  ((10)
+                   (c9display c9subr_10 "(")
+                   (c9write (symbol->string name))
+                   (c9print ", " name ");"))
                   (else
                    (error "CSCM:ERROR, init-func" expr))))))
           (loop (cdr cscm))))))
@@ -140,6 +167,7 @@
                             (cons 'cscm_apply8 "CSCM_APPLY8")
                             ;;; library
                             (cons 'equal? "CSCM_EQUAL_P")
+                            (cons 'zero? "CSCM_ZERO_P")
                             (cons 'not "CSCM_NOT")
                             (cons 'caaar "CSCM_CAAAR") (cons 'caadr "CSCM_CAADR") (cons 'cadar "CSCM_CADAR") (cons 'caddr "CSCM_CADDR")
                             (cons 'cdaar "CSCM_CDAAR") (cons 'cdadr "CSCM_CDADR") (cons 'cddar "CSCM_CDDAR") (cons 'cdddr "CSCM_CDDDR")
@@ -337,12 +365,24 @@
         ((symbol? r)
          (c9print ";"))))
 
+;;(define (c9set! x r)
+;;  (let ((var (car x))
+;;        (exp (cadr x)))
+;;    (c9print var " = " exp ";")
+;;    (if (return? r)
+;;        (c9print "return (" exp ");")))) ;; set!式が式の戻り値の場合は?
+
 (define (c9set! x r)
   (let ((var (car x))
         (exp (cadr x)))
-    (c9print var " = " exp ";")
+    (c9display var " = ")
+    (c9expr exp #f)
+    (c9print ";")
     (if (return? r)
-        (c9print "return (" exp ");")))) ;; set!式が式の戻り値の場合は?
+        (begin (c9display "return (")
+               (c9expr exp #f)
+               (c9print ");")))))
+    
 
 (define (c9quote x r)
   (cond ((return? r)
