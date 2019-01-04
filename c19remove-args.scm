@@ -26,7 +26,7 @@
     `(,first ,name ,x)))
 
 (define (c19cfunc? arg)
-  (print "cscm:debug, c19cfun? arg-> " (if (cscm:var? arg) (var-name arg) #f)) ;; debug
+  ;;(print "cscm:debug, c19cfun? arg-> " (if (cscm:var? arg) (var-name arg) #f)) ;; debug
   (if (cscm:var? arg)
       (let ((name (symbol->string (var-name arg))))
         (let ((len (string-length name)))

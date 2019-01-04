@@ -369,20 +369,33 @@
             (let ((cname (make-c-name name))) ;; 接頭辞として c_ をつける
               (set-car! (cdr topexp) cname) ;; トップレベルの関数名を書き換える
               (set! *rename-alist* (cons (cons name cname) *rename-alist*)) ;; リネームリストにトップレベルの関数を加える
-              (set! *cscm* (cons (c19remove-args (c18constant topexp)) *cscm*))))
-          (set! *scheme* (cons (c19remove-args topexp) *scheme*))))
+              (set! *cscm* (cons (c18constant topexp) *cscm*))))
+          (set! *scheme* (cons topexp *scheme*))))
     (let loop ((cexps (cdr cexps)))
       (if (null? cexps)
-          #t
+          (remove-c-args)
           (let ((cexp (car cexps)))
             (if (cscm? cexp) ;; Cにできるかチェック
                 (let ((var (cadr cexp)))
                   (let ((name (var-name var)))
                     (let ((cname (make-c-name name)))
                       (set-var-name var cname)
-                      (set! *cscm* (cons (c19remove-args (c18constant cexp)) *cscm*)))))
-                (set! *scheme* (cons (c19remove-args cexp) *scheme*)))
+                      (set! *cscm* (cons (c18constant cexp) *cscm*)))))
+                (set! *scheme* (cons cexp *scheme*)))
             (loop (cdr cexps)))))))
+
+(define (remove-c-args)
+  (letrec ((sloop (lambda (s-lst)
+                    (if (null? s-lst)
+                        (cloop *cscm*)                        
+                        (begin (set-car! s-lst (c19remove-args (car s-lst)))
+                               (sloop (cdr s-lst))))))
+           (cloop (lambda (c-lst)
+                    (if (null? c-lst)
+                        #t
+                        (begin (set-car! c-lst (c19remove-args (car c-lst)))
+                               (cloop (cdr c-lst)))))))
+    (sloop *scheme*)))
 
 (define (cscm? expr)
   (let ((form (caddr expr)))
