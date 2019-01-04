@@ -47,8 +47,9 @@
                      (pair? params)
                      (symbol? params)))
             (error "CSCM:ERROR, c0def-func, syntax-error" lambda-expr)
-            (let ((x (c0lam (cdr lambda-expr))))
-              `(,first ,var (lambda ,@x)))))))
+            (begin (set! *c0name* (symbol->string var)) ;; c0map1のため
+                   (let ((x (c0lam (cdr lambda-expr))))
+                     `(,first ,var (lambda ,@x))))))))
          
 (define (c0def-expr form)
   (let ((x (c0expr form)))
@@ -192,6 +193,9 @@
                     ((quasiquote) (c0quasiquote args))
                     ((define) (c0define args)) ;; エラー
                     ((macro) (c0macro args)) ;; エラー
+                    ;;
+                    ((map) (c0map1 args))
+                    ;;
                     (else
                      (c0symbol-fun fun args)))) ;; (f args)の呼び出し
                  ((and (pair? fun)
@@ -472,3 +476,34 @@
   (if (end? l)
       '()
       (cons (fun (car l)) (c0map fun (cdr l)))))
+
+(define (c0map1 args)
+  (let ((f (car args)))    
+    (if (= (length (cdr args)) 1)
+        (if (and (pair? f)
+                 (eq? (car f) 'lambda))
+            (let ((cscm1 (symbol->string (newvar "mapfun")))
+                  (cscm2 (symbol->string (newvar "map"))))
+              (let ((new-fun-name (string->symbol (string-append cscm1 "_" *c0name*)))
+                    (new-map-name (string->symbol (string-append cscm2 "_" *c0name*))))       
+                `(letrec ((,new-fun-name ,f)
+                          (,new-map-name (lambda (x)
+                                           (if (null? x)
+                                               '()
+                                               (cons (,new-fun-name (car x))
+                                                     (,new-map-name (cdr x)))))))
+                   (,new-map-name ,(cadr args)))))
+            (let ((cscm1 (symbol->string (newvar "map"))))
+              (let ((new-map-name (string->symbol (string-append cscm1 "_" *c0name*))))
+                `(letrec ((,new-map-name (lambda (x)
+                                           (if (null? x)
+                                               '()
+                                               (cons (,f (car x))
+                                                     (,new-map-name (cdr x)))))))
+                   (,new-map-name ,(cadr args))))))
+        (begin (print "c0map1: 関数に渡すリストが1つではありません")
+               `(map ,@args)))))
+                                                     
+                   
+
+(define *c0name* #f)
