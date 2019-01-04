@@ -363,12 +363,12 @@
 ;; CとSchemeを判断し、*scheme*と*cscm*に格納する
 (define (compile-def input)
   (let ((cexps (apply-funs input c0transform c1analysis c3liftable c4close c5hoist))) ;; 先頭にトップレベル定義, 残りにホイストされたローカル関数
-    (let ((topexp (car cexps)))
+    (let ((topexp (car cexps))) ;; もともとトップレベルの関数
       (if (cscm? topexp) ;; Cにできるかチェック
           (let ((name (cadr topexp)))
-            (let ((cname (make-c-name name)))
-              (set-car! (cdr topexp) cname)
-              (set! *rename-alist* (cons (cons name cname) *rename-alist*))
+            (let ((cname (make-c-name name))) ;; 接頭辞として c_ をつける
+              (set-car! (cdr topexp) cname) ;; トップレベルの関数名を書き換える
+              (set! *rename-alist* (cons (cons name cname) *rename-alist*)) ;; リネームリストにトップレベルの関数を加える
               (set! *cscm* (cons (c19remove-args (c18constant topexp)) *cscm*))))
           (set! *scheme* (cons (c19remove-args topexp) *scheme*))))
     (let loop ((cexps (cdr cexps)))
