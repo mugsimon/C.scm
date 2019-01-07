@@ -319,20 +319,20 @@
   )
 
 (define (compile-file input)
-  (let ((tmp0 *scheme-port*)
-        (tmp1 *c-port*))
-    (set! *scheme-port* (open-output-file (string-append input ".scm")))
-    (set! *c-port* (open-output-file (string-append input ".c")))
+  (let ((tmp0 *scheme-port*) ;; ポートを退避
+        (tmp1 *c-port*)) ;; ポートを退避
+    (set! *scheme-port* (open-output-file (string-append input ".scm"))) ;; input.scm
+    (set! *c-port* (open-output-file (string-append input ".c"))) ;; input.c
     ;;
-    (let  ((explst (expr-lst input)))
-      (for-each compile-def explst))
+    (let ((explst (expr-lst input))) ;; 関数定義のリスト
+      (for-each compile-def explst)) ;; 各関数定義をcompile-def
     ;;(print "cscm:debug, compile-file, *rename-alist* -> " *rename-alist*) ;; debug
     (replace-cname)
     (let loop ((cscm *cscm*))
       (if (null? cscm)
           #t
           (let ((sexp (car cscm)))
-            (set-car! cscm (c16call-code sexp))
+            (set-car! cscm (c16call-code sexp)) ;; 
             (loop (cdr cscm)))))
     (gen-c)
     (gen-scheme)
@@ -369,20 +369,33 @@
             (let ((cname (make-c-name name))) ;; 接頭辞として c_ をつける
               (set-car! (cdr topexp) cname) ;; トップレベルの関数名を書き換える
               (set! *rename-alist* (cons (cons name cname) *rename-alist*)) ;; リネームリストにトップレベルの関数を加える
-              (set! *cscm* (cons (c19remove-args (c18constant topexp)) *cscm*))))
-          (set! *scheme* (cons (c19remove-args topexp) *scheme*))))
+              (set! *cscm* (cons (c18constant topexp) *cscm*))))
+          (set! *scheme* (cons topexp *scheme*))))
     (let loop ((cexps (cdr cexps)))
       (if (null? cexps)
-          #t
+          (remove-c-args)
           (let ((cexp (car cexps)))
             (if (cscm? cexp) ;; Cにできるかチェック
                 (let ((var (cadr cexp)))
                   (let ((name (var-name var)))
                     (let ((cname (make-c-name name)))
                       (set-var-name var cname)
-                      (set! *cscm* (cons (c19remove-args (c18constant cexp)) *cscm*)))))
-                (set! *scheme* (cons (c19remove-args cexp) *scheme*)))
+                      (set! *cscm* (cons (c18constant cexp) *cscm*)))))
+                (set! *scheme* (cons cexp *scheme*)))
             (loop (cdr cexps)))))))
+
+(define (remove-c-args)
+  (letrec ((sloop (lambda (s-lst)
+                    (if (null? s-lst)
+                        (cloop *cscm*)                        
+                        (begin (set-car! s-lst (c19remove-args (car s-lst)))
+                               (sloop (cdr s-lst))))))
+           (cloop (lambda (c-lst)
+                    (if (null? c-lst)
+                        #t
+                        (begin (set-car! c-lst (c19remove-args (car c-lst)))
+                               (cloop (cdr c-lst)))))))
+    (sloop *scheme*)))
 
 (define (cscm? expr)
   (let ((form (caddr expr)))

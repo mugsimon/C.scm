@@ -243,7 +243,10 @@
       ((5) `(cscm_apply5 (cscm_gvref list) ,@(c16args args)))
       ((6) `(cscm_apply6 (cscm_gvref list) ,@(c16args args)))
       ((7) `(cscm_apply7 (cscm_gvref list) ,@(c16args args)))
-      ((8) `(cscm_apply8 (cscm_gvref list) ,@(c16args args))))))
+      ((8) `(cscm_apply8 (cscm_gvref list) ,@(c16args args)))
+      ((9) `(cscm_apply9 (cscm_gvref list) ,@(c16args args)))
+      ((10) `(cscm_apply10 (cscm_gvref list) ,@(c16args args)))
+      (else (print "c16list: 引数が多すぎます。出力結果に注意してください。")))))
 
 (define (c16append args)
   (let ((n (length args)))
@@ -256,7 +259,8 @@
       ((5) `(cscm_apply5 (cscm_gvref append) ,@(c16args args)))
       ((6) `(cscm_apply6 (cscm_gvref append) ,@(c16args args)))
       ((7) `(cscm_apply7 (cscm_gvref append) ,@(c16args args)))
-      ((8) `(cscm_apply8 (cscm_gvref append) ,@(c16args args))))))
+      ((8) `(cscm_apply8 (cscm_gvref append) ,@(c16args args)))
+      (else (print "c16append: 引数が多すぎます。出力結果に注意してください。")))))
 
 (define (c16map args)
   (let ((n (length args)))
@@ -269,4 +273,5 @@
       ((5) `(cscm_apply5 (cscm_gvref map) ,@(c16args args)))
       ((6) `(cscm_apply6 (cscm_gvref map) ,@(c16args args)))
       ((7) `(cscm_apply7 (cscm_gvref map) ,@(c16args args)))
-      ((8) `(cscm_apply8 (cscm_gvref map) ,@(c16args args))))))
+      ((8) `(cscm_apply8 (cscm_gvref map) ,@(c16args args)))
+      (else (print "c16map: 引数が多すぎます。出力結果に注意してください。")))))
