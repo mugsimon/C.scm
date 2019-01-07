@@ -211,7 +211,7 @@
       (if (member name '(if cond case and or begin lambda delay let let* 
                             letrec do set! quote quasiquote define macro))
           (error "CSCM:ERROR, cannot bind the keyword" name)
-          (list name #f #f #f #f '() '() #f)) ;; 
+          (list name #f #f #f #f '() '() #f)) 
       (error "CSCM:ERROR, not a symbol" name)))
 
 (define (var-name var) (car var))

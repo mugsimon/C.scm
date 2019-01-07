@@ -319,20 +319,20 @@
   )
 
 (define (compile-file input)
-  (let ((tmp0 *scheme-port*)
-        (tmp1 *c-port*))
-    (set! *scheme-port* (open-output-file (string-append input ".scm")))
-    (set! *c-port* (open-output-file (string-append input ".c")))
+  (let ((tmp0 *scheme-port*) ;; ポートを退避
+        (tmp1 *c-port*)) ;; ポートを退避
+    (set! *scheme-port* (open-output-file (string-append input ".scm"))) ;; input.scm
+    (set! *c-port* (open-output-file (string-append input ".c"))) ;; input.c
     ;;
-    (let  ((explst (expr-lst input)))
-      (for-each compile-def explst))
+    (let ((explst (expr-lst input))) ;; 関数定義のリスト
+      (for-each compile-def explst)) ;; 各関数定義をcompile-def
     ;;(print "cscm:debug, compile-file, *rename-alist* -> " *rename-alist*) ;; debug
     (replace-cname)
     (let loop ((cscm *cscm*))
       (if (null? cscm)
           #t
           (let ((sexp (car cscm)))
-            (set-car! cscm (c16call-code sexp))
+            (set-car! cscm (c16call-code sexp)) ;; 
             (loop (cdr cscm)))))
     (gen-c)
     (gen-scheme)

@@ -504,6 +504,4 @@
         (begin (print "c0map1: 関数に渡すリストが1つではありません")
                `(map ,@args)))))
                                                      
-                   
-
 (define *c0name* #f)
