@@ -26,15 +26,14 @@
     `(,first ,name ,x)))
 
 (define (c19cfunc? arg)
+  ;;(print "cscm:debug, c19cfun? arg-> " (if (cscm:var? arg) (var-name arg) #f)) ;; debug
   (if (cscm:var? arg)
       (let ((name (symbol->string (var-name arg))))
         (let ((len (string-length name)))
           (if (< len 6)
               #f
               (let ((head (substring name 0 6)))
-                (if (equal? head "c_cscm")
-                    #t
-                    #f)))))
+                (equal? head "c_cscm")))))
       #f))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
