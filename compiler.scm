@@ -204,37 +204,6 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 各パスをロード
-#|
-(load "c.scm-c0.scm")
-(load "c.scm-c1.scm")
-(load "c3-normalize.scm")
-(load "c4-close.scm")
-(load "c5-hoist.scm")
-(load "c6-lambda.scm")
-(load "c7-scheme.scm")
-(load "c8-anf.scm")
-(load "c9-generate.scm")
-(load "c10-expand-or-and.scm")
-(load "c11-expand-namedlet.scm")
-(load "c12-assign.scm")
-(load "c13-gc.scm")
-
-(load "c0transform.scm") ;;
-(load "c1analysis.scm")
-(load "c4close.scm")
-(load "c5hoist.scm")
-(load "c6contain-lambda.scm")
-(load "c7scheme.scm")
-(load "c8a-normalize.scm")
-(load "c9generate.scm")
-(load "c10or-and.scm")
-(load "c12contain-set.scm")
-;;(load "c13-gc.scm")
-(load "c14rename.scm")
-(load "c16call-code.scm")
-(load "c17replace-cname.scm")
-|#
-
 (load "~/Dropbox/scheme/c.scm/c0transform.scm") ;;
 (load "~/Dropbox/scheme/c.scm/c1analysis.scm")
 (load "~/Dropbox/scheme/c.scm/c4close.scm")

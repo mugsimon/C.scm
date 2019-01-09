@@ -202,6 +202,7 @@
                     ((let) (c9let args r))
                     ((if) (c9if args r))
                     ((set!) (c9set! args r))
+                    ((cscm_gset) (c9gset! args r))
                     ((quote) (c9quote args r))
                     (else (c9symbol-fun fun args r)))))))
         (else
@@ -246,6 +247,9 @@
              (c9expr val var))
             ((and (pair? val) ;;anf~への束縛がset!式のとき
                   (eq? (car val) 'set!))
+             (c9expr val #f))
+            ((and (pair? val) ;; anf~への束縛がcscm_gset式のとき
+                  (eq? (car val) 'cscm_gset))
              (c9expr val #f))
             (else
              (c9display c9cscm " " var " = ")
@@ -405,3 +409,16 @@
          (c9print ");"))
         ((symbol? r)
          (c9print ";"))))
+
+(define (c9gset! x r)
+  (let ((var (car x))
+        (exp (cadr x)))
+    (c9display "CSCM_GVREF(")
+    (c9write (symbol->string var))
+    (c9display ") = ")
+    (c9expr exp #f)
+    (c9print ";")
+    (if (return? r)
+        (begin (c9display "return (")
+               (c9expr exp #f)
+               (c9print ");")))))
