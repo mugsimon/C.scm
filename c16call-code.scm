@@ -113,8 +113,8 @@
                     ((letrec) (c16letrec args))
                     ((set!) (c16set! args))
                     ((quote) (c16quote args))
-                    ((list) (c16list args))
-                    ((append) (c16append args))
+                    ;;((list) (c16list args))
+                    ;;((append) (c16append args))
                     ((map) (c16map args))
                     (else
                      (c16symbol-fun fun args))))

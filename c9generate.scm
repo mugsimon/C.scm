@@ -172,7 +172,9 @@
                             (cons 'caaar "CSCM_CAAAR") (cons 'caadr "CSCM_CAADR") (cons 'cadar "CSCM_CADAR") (cons 'caddr "CSCM_CADDR")
                             (cons 'cdaar "CSCM_CDAAR") (cons 'cdadr "CSCM_CDADR") (cons 'cddar "CSCM_CDDAR") (cons 'cdddr "CSCM_CDDDR")
                             (cons 'null? "CSCM_NULL_P")
-                            (cons 'length "CSCM_LENGTH") (cons 'append "CSCM_APPEND") (cons 'reverse "CSCM_REVERSE")
+                            (cons 'length "CSCM_LENGTH")
+                            ;;(cons 'append "CSCM_APPEND")
+                            (cons 'reverse "CSCM_REVERSE")
                             (cons 'memq "CSCM_MEMQ") (cons 'memv "CSCM_MEMV") (cons 'member "CSCM_MEMBER")
                             (cons 'assq "CSCM_ASSQ") (cons 'assv "CSCM_ASSV") (cons 'assoc "CSCM_ASSOC")))
 
@@ -190,7 +192,7 @@
       (memq (car n) c9*special*)
       #t))
 
-(define (c9expr form r)
+(define (c9expr form r) ;; リターン情報はそのまま渡す
   ;;(print "cscm:debug, c9expr, form -> " form) ;; debug
   (cond ((pair? form)
          (let ((fun (car form))
@@ -204,6 +206,8 @@
                     ((set!) (c9set! args r))
                     ((cscm_gset) (c9gset! args r))
                     ((quote) (c9quote args r))
+                    ((list append) (c9optional form r)) ;; fun args
+                    ;;((+ - * / min max) (c9optional2n form r)) ;; fun args
                     (else (c9symbol-fun fun args r)))))))
         (else
          (cond ((symbol? form)
@@ -233,41 +237,45 @@
                  (c9display c9cscm " " (car params) ", ")
                  (loop (cdr params))))))
     (c9print "){")
-    (c9expr body #t)
+    (c9expr body #t) ;; リターン
     (c9print "}")))
 
 (define (c9let args r)
   (let ((def (caar args)))
-    (let ((var (car def))
-          (val (cadr def))
-          (m (cadr args)))
-      (cond ((and (pair? val) ;; anf~への束縛がif式のとき
+    (let ((var (car def)) ;; 変数
+          (val (cadr def)) ;; 値
+          (m (cadr args))) ;; 本体
+      (cond ((and (pair? val) ;; anf~への束縛がif式のとき (let ((anf (if ...))) m)
                   (eq? (car val) 'if))
-             (c9print c9cscm " " var ";")
-             (c9expr val var))
-            ((and (pair? val) ;;anf~への束縛がset!式のとき
+             (c9print c9cscm " " var ";") ;; CSCM var; 変数宣言
+             (c9expr val var)) ;; リターン先は宣言した変数
+            ((and (pair? val) ;;anf~への束縛がset!式のとき, ローカル変数への代入
                   (eq? (car val) 'set!))
-             (c9expr val #f))
-            ((and (pair? val) ;; anf~への束縛がcscm_gset式のとき
-                  (eq? (car val) 'cscm_gset))
-             (c9expr val #f))
+             (c9expr val #f)) ;; 代入式はリターンしないし, 一時変数に結果を束縛する必要もない
+            ((and (pair? val) ;; anf~への束縛がcscm_gset式のとき, グローバル変数への代入
+                  (eq? (car val) 'cscm_gset)) 
+             (c9expr val #f)) ;; 代入式はリターンしないし, 一時変数に結果を束縛する必要もない
             (else
-             (c9display c9cscm " " var " = ")
-             (c9expr val #f)
+             (c9display c9cscm " " var " = ") ;; CSCM var = 
+             (c9expr val #f) ;; リターンしない
              (c9print ";")))
-      (c9expr m r))))
+      (c9expr m r)))) 
 
 (define (c9if args r)
   (let ((m1 (car args))
         (m2 (cadr args))
         (m3 (caddr args)))
-    (c9display "if (" c9nfalsep "(")
-    (c9expr m1 #f)
+    (c9display "if (" c9nfalsep "(") ;; if(NFALSEP(m1)){...
+    (c9expr m1 #f) ;; test式はリターンしない
     (c9print ")) {")
     (c9expr m2 r)
     (c9print "} else {")
     (c9expr m3 r)
     (c9print "}")))
+
+;; return (f(...));
+;; var = f(...);
+
 
 (define (c9symbol-fun fun args r)
   (cond ((return? r)
@@ -422,3 +430,53 @@
         (begin (c9display "return (")
                (c9expr exp #f)
                (c9print ");")))))
+
+(define (c9optional form r)
+  (if (return? r)
+      (c9display "return (")
+      (if (symbol? r)
+          (c9display " = ")))
+  (let ((fun (car form))
+        (args (cdr form)))
+    (let ((len (length args)))
+      (c9display "CSCM_SYM_APPLY")
+      (case len
+        ((0) (c9display "0"))
+        ((1) (c9display "1"))
+        ((2) (c9display "2"))
+        ((3) (c9display "3"))
+        ((4) (c9display "4"))
+        ((5) (c9display "5"))
+        ((6) (c9display "6"))
+        ((7) (c9display "7"))
+        ((8) (c9display "8"))
+        ((9) (c9display "9"))
+        ((10) (c9display "10")))
+      (case fun
+        ((list) (c9list args r))
+        ((append) (c9append args r)))))
+  (if (return? r)
+      (c9print ");")
+      (if (symbol? r)
+          (c9display ";"))))
+
+(define (c9list args r)
+    (c9display "(CSCM_LIST")
+    (c9args args r)
+    (c9display ")"))
+
+(define (c9append args r)
+    (c9display "(CSCM_APPEND")
+    (c9args args r)
+    (c9display ")"))
+
+(define (c9args args r)
+  (if (not (null? args))
+      (let loop ((args args))
+        (cond ((null? args)
+               #t)
+              (else
+               (c9display ", ")
+               (c9expr (car args) #f)
+               (loop (cdr args)))))))
+    
