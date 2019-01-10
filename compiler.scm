@@ -190,7 +190,9 @@
                           'vector->list 'list->vector
                           'vector-fill!
 
-                          'map 'for-each 'force))
+                          'map 'for-each 'force
+
+                          'write 'display 'newline))
 
 (define (cscm:primitive? x)
   (if (memq x *primitive*)
