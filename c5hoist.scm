@@ -144,15 +144,6 @@
                                    (c5expr (cadr def)))
                              cdefs))))))))
 
-#;(define (c5hoist-fun def)
-  (let ((var (car def))
-        (exp (cadr def)))
-    (let ((name (symbol->string (var-name var)))
-          (t (symbol->string (newvar))))
-      (let ((newname (string->symbol (string-append t "_" *c5name* "_" name))))
-        (set-var-name var newname)
-        (set! *c5hoisted-funs* (cons (cons 'define def) *c5hoisted-funs*))))))
-
 (define (c5hoist-fun def)
   (let ((var (car def))
         (exp (cadr def)))

@@ -42,6 +42,9 @@
                ((quote) (c8quote args k))
                ((and) (c8and args k))
                ((or) (c8or args k))
+               ;;
+               ((cscm_gset) (c8gset! args k))
+               ;;
                (else
                 (if (symbol? fun)
                     (c8symbol-fun fun args k))))))
@@ -123,6 +126,14 @@
       (c8normalize-name exp
                         (lambda (aexp)
                           (k `(set! ,var ,aexp)))))))
+
+(define c8gset!
+  (lambda (args k)
+    (let ((var (car args))
+          (exp (cadr args)))
+      (c8normalize-name exp
+                        (lambda (aexp)
+                          (k `(cscm_gset ,var ,aexp)))))))
 
 (define c8begin
   (lambda (args k)

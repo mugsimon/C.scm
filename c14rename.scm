@@ -28,7 +28,6 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (c14expr form)
-  #;(print "c.scm:debug, c14expr, form -> " form) ;; debug
   (cond ((symbol? form)
          (c14vref form))
         ((pair? form)

@@ -229,7 +229,10 @@
 (define (c16set! args)
   (let ((var (car args))
         (exp (cadr args)))
-    `(set! ,var ,(c16expr exp))))
+    ;;(print "cscm:debug, c16set!, var-> " var) ;; debug
+    (if (cscm:var? var)
+        `(set! ,var ,(c16expr exp))
+        `(cscm_gset ,var ,(c16expr exp)))))
 
 ;; list
 (define (c16list args)

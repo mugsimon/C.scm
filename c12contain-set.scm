@@ -111,12 +111,14 @@
 (define (c12set! args)
   (let ((var (car args)) ;; 変数
         (exp (cadr args))) ;; 値
-    (if (and (cscm:var? var)
-             (var-assigned var)
-             (not (var-closed var)))
+    (if (and (cscm:var? var) ;; make-var
+             (var-assigned var) ;; 代入される
+             (not (var-closed var))) ;; lambda式に閉じ込められない
         (c12expr exp) ;; クローズされない変数への代入は問題ない
-        (begin (print "cscm:debug, c12set!, 代入を発見しました" args) ;; debug
-               #t))))
+        (if (not (cscm:var? var))
+            (c12expr exp) ;; グローバル変数も問題ない
+            (begin (print "cscm:debug, c12set!, 代入を発見しました" args) ;; debug
+                   #t)))))
 
 (define (c12quote args)
   #f)
