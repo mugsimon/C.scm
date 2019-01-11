@@ -154,12 +154,20 @@
                             (cons 'number? "CSCM_NUMBER_P")
                             (cons '= "CSCM_EQUAL") (cons '< "CSCM_LESS") (cons '> "CSCM_MORE") (cons '<= "CSCM_LESSE") (cons '>= "CSCM_MOREE")
                             (cons '+ "CSCM_PLUS") (cons '* "CSCM_TIMES") (cons '- "CSCM_MINUS") (cons '/ "CSCM_DIFF")
-                            (cons 'modulo "CSCM_MODULO") (cons 'mod "CSCM_MODULO");;
-                            (cons 'number->string "CSCM_NUMBER2STRING")
+                            (cons 'quotient "CSCM_QUOTIENT") (cons 'modulo "CSCM_MODULO") (cons 'mod "CSCM_MODULO")
+                            (cons 'exp "CSCM_EXP") (cons 'log "CSCM_LOG")
+                            (cons 'sin "CSCM_SIN") (cons 'cos "CSCM_CONS") (cons 'tan "CSCM_TAN")
+                            (cons 'asin "CSCM_ASIN") (cons 'acos "CSCM_ACOS")(cons 'atan "CSCM_ATAN")
+
+                            (cons 'sqrt "CSCM_SQRT") (cons 'expt "CSCM_EXPT")
+                            
+                            (cons 'number->string "CSCM_NUMBER2STRING") (cons 'string->number "CSCM_STRING2NUMBER")
+                            
                             (cons 'pair? "CSCM_PAIR_P") (cons 'cons "CSCM_CONS") (cons 'car "CSCM_CAR") (cons 'cdr "CSCM_CDR") (cons 'set-car! "CSCM_SETCAR_B") (cons 'set-cdr! "CSCM_SETCDR_B")
                             (cons 'caar "CSCM_CAAR") (cons 'cadr "CSCM_CADR") (cons 'cddr "CSCM_CDDR")
+                            
                             (cons 'symbol? "CSCM_SYMBOL_P") (cons 'symbol->string "CSCM_SYMBOL2STRING") (cons 'string->symbol "CSCM_STRING2SYMBOL")
-                            (cons 'string? "CSCM_STRING_P") (cons 'string-ref "CSCM_STRING_REF")
+                            (cons 'string? "CSCM_STRING_P") (cons 'string-ref "CSCM_STRING_REF") (cons 'string-set! "CSCM_STRING_SETB")
                             (cons 'apply "CSCM_APPLY")
                             ;;; cscm apply
                             (cons 'cscm_apply0 "CSCM_APPLY0") (cons 'cscm_apply1 "CSCM_APPLY1") (cons 'cscm_apply2 "CSCM_APPLY2") (cons 'cscm_apply3 "CSCM_APPLY3")
@@ -176,7 +184,10 @@
                             ;;(cons 'append "CSCM_APPEND")
                             (cons 'reverse "CSCM_REVERSE")
                             (cons 'memq "CSCM_MEMQ") (cons 'memv "CSCM_MEMV") (cons 'member "CSCM_MEMBER")
-                            (cons 'assq "CSCM_ASSQ") (cons 'assv "CSCM_ASSV") (cons 'assoc "CSCM_ASSOC")))
+                            (cons 'assq "CSCM_ASSQ") (cons 'assv "CSCM_ASSV") (cons 'assoc "CSCM_ASSOC")
+                            (cons 'display "CSCM_DISPLAY") (cons 'newline "CSCM_NEWLINE")
+                            (cons 'load "CSCM_LOAD")
+                            ))
 
 (define c9*cscm* (list (cons 'cscm_gvref "CSCM_GVREF")
                        
@@ -206,7 +217,7 @@
                     ((set!) (c9set! args r))
                     ((cscm_gset) (c9gset! args r))
                     ((quote) (c9quote args r))
-                    ((list append) (c9optional form r)) ;; fun args
+                    ((list append map) (c9optional form r)) ;; fun args
                     ;;((+ - * / min max) (c9optional2n form r)) ;; fun args
                     (else (c9symbol-fun fun args r)))))))
         (else
@@ -377,13 +388,6 @@
         ((symbol? r)
          (c9print ";"))))
 
-;;(define (c9set! x r)
-;;  (let ((var (car x))
-;;        (exp (cadr x)))
-;;    (c9print var " = " exp ";")
-;;    (if (return? r)
-;;        (c9print "return (" exp ");")))) ;; set!式が式の戻り値の場合は?
-
 (define (c9set! x r)
   (let ((var (car x))
         (exp (cadr x)))
@@ -454,7 +458,8 @@
         ((10) (c9display "10")))
       (case fun
         ((list) (c9list args r))
-        ((append) (c9append args r)))))
+        ((append) (c9append args r))
+        ((map) (c9map args r)))))
   (if (return? r)
       (c9print ");")
       (if (symbol? r)
@@ -469,6 +474,11 @@
     (c9display "(CSCM_APPEND")
     (c9args args r)
     (c9display ")"))
+
+(define (c9map args r)
+  (c9display "(CSCM_MAP")
+  (c9args args r)
+  (c9display ")"))
 
 (define (c9args args r)
   (if (not (null? args))
