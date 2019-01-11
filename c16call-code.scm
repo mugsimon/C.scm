@@ -113,9 +113,9 @@
                     ((letrec) (c16letrec args))
                     ((set!) (c16set! args))
                     ((quote) (c16quote args))
-                    ((list) (c16list args))
-                    ((append) (c16append args))
-                    ((map) (c16map args))
+                    ;;((list) (c16list args))
+                    ;;((append) (c16append args))
+                    ;;((map) (c16map args))
                     (else
                      (c16symbol-fun fun args))))
                  (else
@@ -234,6 +234,8 @@
         `(set! ,var ,(c16expr exp))
         `(cscm_gset ,var ,(c16expr exp)))))
 
+;; 以下はオプショナル引数の関数
+;; Cの直接呼び出しに変更したのでgvref経由は使わない
 ;; list
 (define (c16list args)
   (let ((n (length args)))
