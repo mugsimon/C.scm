@@ -103,6 +103,12 @@
        (list? (var-loc x))
        (boolean? (var-liftable x))))
 
+;; 20190115追加
+(define (cscm:var-name x)
+  (if (cscm:var? x)
+      (var-name x)
+      x))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 新しい変数を用意する
 ;; c0transform, c8anfで使用

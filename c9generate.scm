@@ -65,8 +65,51 @@
          (error "CSCM:ERROR, c9generate, not a definition" x)))
       (error "CSCM:ERROR, c9generate, not a definition" x)))
 
+(define (c9generate x)
+  (if (cscm:pair? x)
+      (case (car x)
+        ((define)
+         (let ((first (car x))
+               (name (cadr x))
+               (form (caddr x)))
+           (if (and (cscm:pair? form)
+                    (eq? (car form) 'lambda))
+               (c9def-func first
+                           name
+                           form)
+               (error "CSCM:ERROR, c9generate, not a function definition" x))))
+        (else
+         (error "CSCM:ERROR, c9generate, not a definition" x)))
+      (error "CSCM:ERROR, c9generate, not a definition" x)))
+
 (define (c9def-func first name lambda-expr)
   (c9display c9cscm " " name) (c9expr lambda-expr #t)) ;; CSCM name
+
+(define (c9def-func first name lambda-expr)
+  (let ((name (if (cscm:var? name)
+                  (var-name name)
+                  name)))
+    (c9display c9cscm " " name) (c9expr lambda-expr #t))) ;; CSCM name
+
+(define (dec-func) ;; 宣言
+  (let loop ((cscm *cscm*))
+    (if (null? cscm)
+        (newline *c-port*)
+        (let ((sexp (car cscm)))
+          (let ((name (cadr sexp))
+                (lambda-expr (caddr sexp)))
+            (let ((params (cadr lambda-expr)))
+              (c9display c9cscm " " name "(")
+              (if (null? params)
+                  (c9display c9void)
+                  (let loop ((params params))
+                    (cond ((null? (cdr params))
+                           (c9display c9cscm " " (car params)))
+                          (else
+                           (c9display c9cscm " " (car params) ", ")
+                           (loop (cdr params))))))
+              (c9print ");")))
+          (loop (cdr cscm))))))
 
 (define (dec-func) ;; 宣言
   (let loop ((cscm *cscm*))
