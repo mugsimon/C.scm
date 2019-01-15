@@ -155,7 +155,8 @@
                             (cons '= "CSCM_EQUAL") (cons '< "CSCM_LESS") (cons '> "CSCM_MORE") (cons '<= "CSCM_LESSE") (cons '>= "CSCM_MOREE")
                             (cons '+ "CSCM_PLUS") (cons '* "CSCM_TIMES") (cons '- "CSCM_MINUS") (cons '/ "CSCM_DIFF")
                             (cons 'quotient "CSCM_QUOTIENT") (cons 'modulo "CSCM_MODULO") (cons 'mod "CSCM_MODULO")
-                            (cons 'exp "CSCM_EXP") (cons 'log "CSCM_LOG")
+                            ;;(cons 'exp "CSCM_EXP")
+                            (cons 'log "CSCM_LOG")
                             (cons 'sin "CSCM_SIN") (cons 'cos "CSCM_CONS") (cons 'tan "CSCM_TAN")
                             (cons 'asin "CSCM_ASIN") (cons 'acos "CSCM_ACOS")(cons 'atan "CSCM_ATAN")
 
