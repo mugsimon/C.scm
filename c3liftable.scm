@@ -289,8 +289,26 @@
 
 ;;; SCVREF  Variable References.
 
+;(define (c3vref name)
+;  name)
+
 (define (c3vref name)
-  name)
+  (if (and (cscm:var? name)
+           (var-assigned name))
+      (let lookup ((env *env*)
+                   (ccb #f))
+        (if (null? env)
+            (error "CSCM:ERROR, c3vref, ローカル変数が見つかりません")
+            (let ((var (car env)))
+              (cond ((eq? var 'CB)
+                     (lookup (cdr env) #t))
+                    ((eq? (var-name var) (var-name name))
+                     (if ccb (set! *liftable* #f))
+                     name)
+                    (else
+                     (lookup (cdr env) ccb))))))
+      name))
+
 
 (define (c3set! args)
   (let ((name (car args))
