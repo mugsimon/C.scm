@@ -95,6 +95,11 @@
   (and (not (cscm:var? x))
        (pair? x)))
 
+(define (cscm:list? x)
+  (if (cscm:symbol? x)
+      #f
+      (cscm:list? (cdr x))))
+
 ;; make-varなら#t
 (define (cscm:var? x)
   (and (list? x)
@@ -405,7 +410,7 @@
     (if (null? cscm)
         #t
         (let ((expr (car cscm)))
-          (set-car! cscm (apply-funs expr #;c7scheme #;c10or-and c8a-normalize c14rename-def))
+          (set-car! cscm (apply-funs expr #;c7scheme c10or-and c8a-normalize c14rename-def))
           (loop (cdr cscm)))))
   (init-func) ;; 初期化コードを出力
   (dec-func) ;; 宣言を出力
