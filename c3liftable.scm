@@ -1,3 +1,6 @@
+;; トップレベルの関数定義を受け取り、入れ子の関数がlambda-lifting可能か判断する
+;; クロージャに閉じ込められる変数への代入があれば不可
+;; クロージャに閉じ込められ、代入される変数への参照があれば不可
 (define (c3liftable x)
   (if (pair? x)
       (case (car x)
@@ -81,7 +84,6 @@
 ;;; SCEVAL  The Expression Dispatcher.
 
 (define (c3expr form)
-  ;;(print "cscm:debug, c3expr, form->" form) ;; debug
   (cond ((cscm:symbol? form)
          (c3vref form))
         ((cscm:pair? form)
@@ -170,24 +172,10 @@
 
 (define *liftable* #f)
 
-;;(define (c3set-liftable def)
-;;  (let ((var (car def))
-;;        (exp (cadr def)))
-    ;;(print "cscm:debug, c3set-liftable, var->" var) ;; debug
-;;    (if (var-local-fun var)
-;;        (let ((tmp *liftable*))
-;;          (set! *liftable* #t)
-          ;;
-;;          (c3expr exp)
-;;          (set-var-liftable var *liftable*)
-          ;;
-;;          (set! *liftable* tmp))
-;;        (c3expr exp))))
 
 (define (c3set-liftable def)
   (let ((var (car def))
         (exp (cadr def)))
-    ;;(print "cscm:debug, c3set-liftable, var->" var) ;; debug
     (if (and (pair? exp)
              (eq? (car exp) 'lambda))
         (if (var-local-fun var)
@@ -288,9 +276,6 @@
 
 
 ;;; SCVREF  Variable References.
-
-;(define (c3vref name)
-;  name)
 
 (define (c3vref name)
   (if (and (cscm:var? name)

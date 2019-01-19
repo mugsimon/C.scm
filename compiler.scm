@@ -36,6 +36,8 @@
         (else
          (cons (car x) (cscm:difference (cdr x) y)))))
 
+;; make-varに対応したmemq
+;; var-nameが同じなら同じ要素とみなす
 (define (cscm:memq elt lst)
   (let ((elt (if (cscm:var? elt)
                  (var-name elt)
@@ -50,6 +52,8 @@
                 lst
                 (loop (cdr lst))))))))
 
+;; make-varに対応したmember
+;; var-nameが同じなら同じ要素とみなす
 (define (cscm:member elt lst)
   (let ((elt (if (cscm:var? elt)
                  (var-name elt)
@@ -81,14 +85,17 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; make-varを持つSchemeコードで使用する
+;; make-varまたはsymbolなら#t
 (define (cscm:symbol? x)
   (or (cscm:var? x)
       (symbol? x)))
 
+;; make-varではなくペアなら#t
 (define (cscm:pair? x)
   (and (not (cscm:var? x))
        (pair? x)))
 
+;; make-varなら#t
 (define (cscm:var? x)
   (and (list? x)
        (= (length x) 8)
@@ -104,6 +111,8 @@
        (boolean? (var-liftable x))))
 
 ;; 20190115追加
+;; make-varならvar-nameを返す
+;; そうでなければ引数を返す
 (define (cscm:var-name x)
   (if (cscm:var? x)
       (var-name x)
@@ -111,7 +120,7 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 新しい変数を用意する
-;; c0transform, c8anfで使用
+;; デフォルトでは「cscm番号」
 (define *newvar-name* "cscm")
 (define *newvar* 0)
 (define (newvar . name)
@@ -124,7 +133,6 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; primitiveとlibrary手続き
-;; anfとrenameで使用する
 (define *primitive* (list 'eqv? 'eq? 
 
                             'number? 'complex? 'real? 'rational? 'integer?
@@ -222,7 +230,6 @@
 (load "~/Dropbox/scheme/c.scm/c9generate.scm")
 (load "~/Dropbox/scheme/c.scm/c10or-and.scm")
 (load "~/Dropbox/scheme/c.scm/c12contain-set.scm")
-;;(load "~/Dropbox/scheme/c.scm/c13-gc.scm")
 (load "~/Dropbox/scheme/c.scm/c14rename.scm")
 (load "~/Dropbox/scheme/c.scm/c16call-code.scm")
 (load "~/Dropbox/scheme/c.scm/c17replace-cname.scm")
@@ -257,10 +264,16 @@
 (define *scheme-port* (current-output-port))
 (define *c-port* (current-output-port))
 
+;; Schemeにするコードのリスト
 (define *scheme* '())
+;; Cにするコードのリスト
 (define *cscm* '())
+;; Schemeの大域変数に束縛する定数のリスト
 (define *cscm-constant* '())
 (define *rename-alist* '())
+
+
+
 
 (define (compile input)
   (let ((tmp0 *scheme*)
@@ -309,7 +322,7 @@
       (if (null? cscm)
           #t
           (let ((sexp (car cscm)))
-            (set-car! cscm (c16call-code sexp)) ;; 
+            (set-car! cscm (c16call-code sexp)) ;;
             (loop (cdr cscm)))))
     (gen-c)
     (gen-scheme)
@@ -343,26 +356,27 @@
     (let ((topexp (car cexps))) ;; もともとトップレベルの関数
       (if (cscm? topexp) ;; Cにできるかチェック
           (let ((name (cadr topexp)))
-            (let ((cname (make-c-name name))) ;; 接頭辞として c_ をつける
+            (let ((cname (make-c-name name))) ;; 接頭辞として c_ をつけた新しい名前
               (set-car! (cdr topexp) cname) ;; トップレベルの関数名を書き換える
-              (set! *rename-alist* (cons (cons name cname) *rename-alist*)) ;; リネームリストにトップレベルの関数を加える
-              (set! *cscm* (cons (c18constant topexp) *cscm*))))
-          (set! *scheme* (cons topexp *scheme*))))
-    (let loop ((cexps (cdr cexps)))
+              (set! *rename-alist* (cons (cons name cname) *rename-alist*)) ;; リネームリストにトップレベルの関数を加える　(名前 . 新しい名前)
+              (set! *cscm* (cons (c18constant topexp) *cscm*)))) ;; quoteを使ったリストをグローバル変数に置き換え, *cscm-constant*に定数が入る
+          (set! *scheme* (cons topexp *scheme*)))) ;; Cにできないときはこっち
+    (let loop ((cexps (cdr cexps))) ;; トップレベルの次はホイストされてトップレベルになった関数の検査
       (if (null? cexps)
-          (remove-c-args)
+          (remove-c-args) ;; すべての検査が終了したらc_cscmってなってる引数を削除する
           (let ((cexp (car cexps)))
             (if (cscm? cexp) ;; Cにできるかチェック
                 (let ((var (cadr cexp)))
                   (let ((name (var-name var)))
-                    (let ((cname (make-c-name name)))
-                      (set-var-name var cname)
-                      (set! *cscm* (cons (c18constant cexp) *cscm*)))))
-                (set! *scheme* (cons cexp *scheme*)))
+                    (let ((cname (make-c-name name))) ;; 接頭辞として c_ をつけた新しい名前
+                      (set-var-name var cname) ;; 新しい名前に書き換えた
+                      (set! *cscm* (cons (c18constant cexp) *cscm*))))) ;; quoteを使ったリストをグローバル変数に置き換え, *cscm-constant*に定数が入る
+                (set! *scheme* (cons cexp *scheme*))) ;; Cにできないときはこっち
             (loop (cdr cexps)))))))
 
+;; c_cscm...って名前の引数を削除する
 (define (remove-c-args)
-  (letrec ((sloop (lambda (s-lst)
+  (letrec ((sloop (lambda (s-lst) ;; Schemeにする関数定義から始める
                     (if (null? s-lst)
                         (cloop *cscm*)                        
                         (begin (set-car! s-lst (c19remove-args (car s-lst)))
