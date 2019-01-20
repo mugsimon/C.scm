@@ -77,7 +77,7 @@
   `(begin ,@(map c4expr args)))  
 
 (define (c4lambda args . free-vars)
-  (print "cscm:debug, c4lambda, args -> " args) ;; debug
+  ;;(print "cscm:debug, c4lambda, args -> " args) ;; debug
   (let ((params (car args))
         (body (cadr args)))
     (list 'lambda (cscm:union (if (null? free-vars)

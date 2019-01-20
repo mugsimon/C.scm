@@ -78,14 +78,17 @@
                 (lambda-expr (caddr sexp)))
             (let ((params (cadr lambda-expr)))
               (c9display c9cscm " " (cscm:var-name name) "(")
-              (if (null? params)
-                  (c9display c9void)
-                  (let loop ((params params))
-                    (cond ((null? (cdr params))
-                           (c9display c9cscm " " (cscm:var-name (car params))))
-                          (else
-                           (c9display c9cscm " " (cscm:var-name (car params)) ", ")
-                           (loop (cdr params))))))
+              (cond ((null? params)
+                     (c9display c9void))
+                    ((cscm:var? params)
+                     (c9display c9cscm " " (cscm:var-name params)))
+                    (else 
+                     (let loop ((params params))
+                       (cond ((null? (cdr params))
+                              (c9display c9cscm " " (cscm:var-name (car params))))
+                             (else
+                              (c9display c9cscm " " (cscm:var-name (car params)) ", ")
+                              (loop (cdr params)))))))
               (c9print ");")))
           (loop (cdr cscm))))))
 
@@ -238,14 +241,17 @@
   (c9display "(")
   (let ((params (car args))
         (body (cadr args)))
-    (if (null? params)
-        (c9display c9void) ;; (void)
-        (let loop ((params params))
-          (cond ((null? (cdr params))
-                 (c9display c9cscm " " (cscm:var-name (car params))))
-                (else
-                 (c9display c9cscm " " (cscm:var-name (car params)) ", ")
-                 (loop (cdr params))))))
+    (cond ((null? params)
+           (c9display c9void)) ;; (void)
+          ((cscm:var? params)
+           (c9display c9cscm " " (cscm:var-name params)))
+          (else
+           (let loop ((params params))
+             (cond ((null? (cdr params))
+                    (c9display c9cscm " " (cscm:var-name (car params))))
+                   (else
+                    (c9display c9cscm " " (cscm:var-name (car params)) ", ")
+                    (loop (cdr params)))))))
     (c9print "){")
     (c9expr body #t) ;; リターン
     (c9print "}")))
