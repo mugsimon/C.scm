@@ -150,6 +150,7 @@
     ret))
 
 (define (c3lam lambda-expr) ;; (params body)
+  ;;(print "cscm:debug, c3lam, lambda-expr -> " lambda-expr) ;; debug
   (let ((tmp *env*)
         (ret #f))
     (set! *env* *env*)
@@ -158,9 +159,9 @@
         ((not (cscm:pair? vl))
          (if (not (null? vl)) ;; paramsがsymbol単体のとき
              (let ((var vl))
-               (set! *env* (cons var *env*)))
-             (let ((params (car lambda-expr)))
-               (set! ret (list params (c3body (cadr lambda-expr)))))))
+               (set! *env* (cons var *env*))))
+         (let ((params (car lambda-expr)))
+           (set! ret (list params (c3body (cadr lambda-expr))))))
       (let ((var (car vl)))
         (set! *env* (cons var *env*))))
     ;;
