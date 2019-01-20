@@ -323,12 +323,7 @@
       (for-each compile-def explst)) ;; 各関数定義をcompile-def
     ;;(print "cscm:debug, compile-file, *rename-alist* -> " *rename-alist*) ;; debug
     (replace-cname)
-    (let loop ((cscm *cscm*))
-      (if (null? cscm)
-          #t
-          (let ((sexp (car cscm)))
-            (set-car! cscm (c16call-code sexp)) ;;
-            (loop (cdr cscm)))))
+    
     (gen-c)
     (gen-scheme)
     ;;((lambda (s x) (display s) (write x) (newline))  "cscm:debug, compile-file, *cscm* -> " *cscm*) ;; debug
@@ -427,7 +422,7 @@
     (if (null? scheme)
         #t
         (let ((expr (car scheme)))
-          (set-car! scheme (apply-funs expr c7scheme c14rename-def))
+          (set-car! scheme (apply-funs expr c14rename-def c7scheme))
           (loop (cdr scheme)))))
   (let loop ((scheme *scheme*))
     (if (null? scheme)
