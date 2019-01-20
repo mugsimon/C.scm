@@ -96,9 +96,14 @@
        (pair? x)))
 
 (define (cscm:list? x)
-  (if (cscm:symbol? x)
-      #f
-      (cscm:list? (cdr x))))
+  (cond ((null? x)
+         #t)
+        ((cscm:var? x)
+         #f)
+        ((cscm:pair? x)
+         (cscm:list? (cdr x)))
+        (else
+         #f)))
 
 ;; make-varなら#t
 (define (cscm:var? x)
@@ -225,22 +230,22 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 各パスをロード
-(load "~/Dropbox/scheme/c.scm/c0transform.scm") ;;
-(load "~/Dropbox/scheme/c.scm/c1analysis.scm")
-(load "~/Dropbox/scheme/c.scm/c4close.scm")
-(load "~/Dropbox/scheme/c.scm/c5hoist.scm")
-(load "~/Dropbox/scheme/c.scm/c6contain-lambda.scm")
-(load "~/Dropbox/scheme/c.scm/c7scheme.scm")
-(load "~/Dropbox/scheme/c.scm/c8a-normalize.scm")
-(load "~/Dropbox/scheme/c.scm/c9generate.scm")
-(load "~/Dropbox/scheme/c.scm/c10or-and.scm")
-(load "~/Dropbox/scheme/c.scm/c12contain-set.scm")
-(load "~/Dropbox/scheme/c.scm/c14rename.scm")
-(load "~/Dropbox/scheme/c.scm/c16call-code.scm")
-(load "~/Dropbox/scheme/c.scm/c17replace-cname.scm")
-(load "~/Dropbox/scheme/c.scm/c3liftable.scm")
-(load "~/Dropbox/scheme/c.scm/c18constant.scm")
-(load "~/Dropbox/scheme/c.scm/c19remove-args.scm")
+(load "~/Dropbox/scheme/c.scm_final/c0transform.scm") ;;
+(load "~/Dropbox/scheme/c.scm_final/c1analysis.scm")
+(load "~/Dropbox/scheme/c.scm_final/c4close.scm")
+(load "~/Dropbox/scheme/c.scm_final/c5hoist.scm")
+(load "~/Dropbox/scheme/c.scm_final/c6contain-lambda.scm")
+(load "~/Dropbox/scheme/c.scm_final/c7scheme.scm")
+(load "~/Dropbox/scheme/c.scm_final/c8a-normalize.scm")
+(load "~/Dropbox/scheme/c.scm_final/c9generate.scm")
+(load "~/Dropbox/scheme/c.scm_final/c10or-and.scm")
+(load "~/Dropbox/scheme/c.scm_final/c12contain-set.scm")
+(load "~/Dropbox/scheme/c.scm_final/c14rename.scm")
+;;(load "~/Dropbox/scheme/c.scm/c16call-code.scm")
+(load "~/Dropbox/scheme/c.scm_final/c17replace-cname.scm")
+(load "~/Dropbox/scheme/c.scm_final/c3liftable.scm")
+(load "~/Dropbox/scheme/c.scm_final/c18constant.scm")
+(load "~/Dropbox/scheme/c.scm_final/c19remove-args.scm")
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;
@@ -302,16 +307,9 @@
   (compile-def input)
   (replace-cname)
   ;;((lambda (s x) (display s) (write x) (newline))  "cscm:debug, compile-sexp, *cscm* -> " *cscm*) ;; debug
-  (let loop ((cscm *cscm*))
-    (if (null? cscm)
-        #t
-        (let ((sexp (car cscm)))
-          (set-car! cscm (c16call-code sexp))
-          (loop (cdr cscm)))))
   ;;((lambda (s x) (display s) (write x) (newline))  "cscm:debug, compile-sexp, *cscm* -> " *cscm*) ;; debug
   (gen-c)
-  (gen-scheme)
-  )
+  (gen-scheme))
 
 (define (compile-file input)
   (let ((tmp0 *scheme-port*) ;; ポートを退避
@@ -352,7 +350,7 @@
 ;; トップレベルの定義を受け取り、ホイストまで行う
 ;; CとSchemeを判断し、*scheme*と*cscm*に格納する
 (define (compile-def input)
-  (let ((cexps (apply-funs input c0transform c1analysis c3liftable c4close c5hoist))) ;; 先頭にトップレベル定義, 残りにホイストされたローカル関数
+  (let ((cexps (apply-funs input c0transform c10or-and c1analysis c3liftable c4close c5hoist))) ;; 先頭にトップレベル定義, 残りにホイストされたローカル関数
     (let ((topexp (car cexps))) ;; もともとトップレベルの関数
       (if (cscm? topexp) ;; Cにできるかチェック
           (let ((name (cadr topexp)))
@@ -405,7 +403,7 @@
     (if (null? cscm)
         #t
         (let ((expr (car cscm)))
-          (set-car! cscm (apply-funs expr #;c7scheme c10or-and c8a-normalize c14rename-def))
+          (set-car! cscm (apply-funs expr #;c7scheme #;c10or-and c8a-normalize c14rename-def))
           (loop (cdr cscm)))))
   (init-func) ;; 初期化コードを出力
   (dec-func) ;; 宣言を出力
@@ -418,6 +416,7 @@
           (loop (cdr cscm))))))
 
 (define (gen-scheme)
+  (gen-constant)
   (let loop ((scheme *scheme*))
     (if (null? scheme)
         #t
@@ -426,7 +425,7 @@
           (loop (cdr scheme)))))
   (let loop ((scheme *scheme*))
     (if (null? scheme)
-        (gen-constant)
+        #t
         (let ((expr (car scheme)))
           (write expr *scheme-port*)
           (newline *scheme-port*)
