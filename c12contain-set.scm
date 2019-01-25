@@ -24,7 +24,7 @@
 
 (define (c12def-func first name lambda-expr)
   (if (and (cscm:var? name)
-           (var-assigned name)) ;; トップレベルへの代入があるならCにはできない
+           (var-assigned name)) ;; トップレベル関数への代入があるならCにはできない（なくても良い？？0122）
       #f
       (let ((body (caddr lambda-expr)))
         (c12expr body))))

@@ -208,8 +208,9 @@
       (memq (car n) c9*special*)
       #t))
 
+;; トップレベルの関数定義を出力した直後はrは#t
 (define (c9expr form r) ;; リターン情報はそのまま渡す
-  (cond ((cscm:pair? form)
+  (cond ((cscm:pair? form) 
          (let ((fun (car form))
                (args (cdr form)))
            (cond ((cscm:symbol? fun)
@@ -237,6 +238,7 @@
 ;; (CSCM p1, CSCM p2){
 ;;   return ;
 ;; }
+;; rは#tが渡される
 (define (c9lambda args r)
   (c9display "(")
   (let ((params (car args))
@@ -266,9 +268,15 @@
              (let ((name (cscm:var-name var)))
                (c9print c9cscm " " name ";") ;; CSCM var; 変数宣言
                (c9expr val name))) ;; リターン先は宣言した変数
-            ((and (pair? val) ;;anf~への束縛がset!式のとき, ローカル変数への代入
-                  (eq? (car val) 'set!))
+            ((and (pair? val) ;;anf~への束縛がset!式のとき
+                  (eq? (car val) 'set!)
+                  (c9anf? var))
              (c9expr val #f)) ;; 代入式はリターンしないし, 一時変数に結果を束縛する必要もない
+            ((and (pair? val) ;; 束縛がset!のとき
+                  (eq? (car val) 'set!))
+             (let ((name (cscm:var-name var)))
+               (c9print c9cscm " " name ";") ;; 
+               (c9expr val name)))
             (else
              (c9display c9cscm " " (cscm:var-name var) " = ") ;; CSCM var = 
              (c9expr val #f) ;; リターンしない
@@ -433,11 +441,13 @@
 
 ;; anfはmake-varされていないからグローバル変数との区別が必要
 (define (c9anf? x)
-  (let ((x0 (symbol->string x)))
-    (if (< (string-length x0) 3)
-        #f
-        (let ((x1 (substring x0 0 3)))
-          (equal? x1 "anf")))))
+  (if (cscm:var? x)
+      #f
+      (let ((x0 (symbol->string x)))
+        (if (< (string-length x0) 3)
+            #f
+            (let ((x1 (substring x0 0 3)))
+              (equal? x1 "anf"))))))
           
 (define (c9number x r)
   (cond ((return? r)
@@ -504,8 +514,22 @@
            (c9print ";")))
     (if (return? r)
         (begin (c9display "return (")
-               (c9expr exp #f)
-               (c9print ");")))))
+               (if (cscm:var? var)
+                   (c9display (var-name var))
+                   (begin (c9display "CSCM_GVREF(")
+                          (c9write (symbol->string var))
+                          (c9display ")")))
+               ;;(c9expr exp #f)
+               (c9print ");"))
+        (if (symbol? r)
+            (begin (c9display r " = ")
+               (if (cscm:var? var)
+                   (c9display (var-name var))
+                   (begin (c9display "CSCM_GVREF(")
+                          (c9write (symbol->string var))
+                          (c9display ")")))
+               ;;(c9expr exp #f)
+               (c9print ";"))))))
     
 (define (c9quote x r)
   (cond ((return? r)
