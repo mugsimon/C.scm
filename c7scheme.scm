@@ -22,6 +22,25 @@
          (error "CSCM:ERROR, c7scheme, not a definition" x)))
       (error "CSCM:ERROR, c7scheme, not a definition" x)))
 
+(define (c7scheme x)
+  (if (cscm:pair? x)
+      (case (car x)
+        ((define)
+         (let ((first (car x))
+               (name (cadr x))
+               (form (caddr x)))
+           (if (and (cscm:pair? form)
+                    (eq? (car form) 'lambda))
+               (c7def-func first
+                           name
+                           form)
+               (c7def-expr first
+                           name
+                           form))))
+        (else
+         (error "CSCM:ERROR, c7scheme, not a definition" x)))
+      (error "CSCM:ERROR, c7scheme, not a definition" x)))
+
 (define (c7def-func first name lambda-expr)
   (let ((name (if (cscm:var? name)
                   (var-name name)
@@ -100,11 +119,52 @@
         (else
          (cons (var-name (car params)) (c7params (cdr params))))))
 
+(define (c7params params)
+  (cond ((null? params)
+         '())
+        ((cscm:var? params)
+         (var-name params))
+        (else
+         (let ((var (car params)))
+           (let ((name (if (cscm:var? var)
+                           (var-name var)
+                           var)))
+         (cons name (c7params (cdr params))))))))
+
 (define (c7let args)
   (let loop ((defs (car args))
              (cdefs '()))
     (cond ((null? defs)
            `(let ,(reverse cdefs) ,(c7expr (cadr args))))
+          (else
+           (let ((def (car defs)))
+             (loop (cdr defs)
+                   (cons (list (var-name (car def))
+                               (c7expr (cadr def)))
+                         cdefs)))))))
+
+(define (c7let args)
+  (let loop ((defs (car args))
+             (cdefs '()))
+    (cond ((null? defs)
+           `(let ,(reverse cdefs) ,(c7expr (cadr args))))
+          (else
+           (let ((def (car defs)))
+             (let ((var (car def))
+                   (exp (cadr def)))
+               (let ((name (if (cscm:var? var)
+                               (var-name var)
+                               var)))
+                 (loop (cdr defs)
+                       (cons (list name
+                                   (c7expr exp))
+                             cdefs)))))))))
+
+(define (c7let* args)
+  (let loop ((defs (car args))
+             (cdefs '()))
+    (cond ((null? defs)
+           `(let* ,(reverse cdefs) ,(c7expr (cadr args))))
           (else
            (let ((def (car defs)))
              (loop (cdr defs)
@@ -119,10 +179,15 @@
            `(let* ,(reverse cdefs) ,(c7expr (cadr args))))
           (else
            (let ((def (car defs)))
-             (loop (cdr defs)
-                   (cons (list (var-name (car def))
-                               (c7expr (cadr def)))
-                         cdefs)))))))
+             (let ((var (car def))
+                   (exp (cadr def)))
+               (let ((name (if (cscm:var? var)
+                               (var-name var)
+                               var)))
+                 (loop (cdr defs)
+                       (cons (list name
+                                   (c7expr exp))
+                             cdefs)))))))))
 
 (define (c7letrec args)
   (let loop ((defs (car args))
@@ -136,6 +201,22 @@
                    (cons (list (var-name var)
                                (c7expr form))
                          cdefs)))))))
+
+(define (c7letrec args)
+  (let loop ((defs (car args))
+             (cdefs '()))
+    (cond ((null? defs)
+           `(letrec ,(reverse cdefs) ,(c7expr (cadr args))))
+          (else
+           (let ((var (caar defs))
+                 (form (cadar defs)))
+             (let ((name (if (cscm:var? var)
+                             (var-name var)
+                             var)))
+               (loop (cdr defs)
+                     (cons (list name
+                                 (c7expr form))
+                           cdefs))))))))
 
 (define (c7set! args)
   (let ((var (car args))

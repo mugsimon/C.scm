@@ -1,4 +1,5 @@
 ;; A-Normal-Formへ変形する
+;; make-var対応版
 ;; (define name (lambda params body))
 ;; (define name form)
 ;; sexp
@@ -17,14 +18,35 @@
          (c8normalize-term x)))
       (c8normalize-term x)))
 
+(define (c8a-normalize x)
+  (if (cscm:pair? x)
+      (case (car x)
+        ((define) ;; (define var form)
+         (let ((form (caddr x))) ;; form
+           (if (and (cscm:pair? form) ;; form -> (...)
+                    (eq? (car form) 'lambda)) ;; form -> (lambda ...)
+               (c8def-func (car x) ;; define
+                           (cadr x) ;; var
+                           (caddr x)) ;; (lambda ...)
+               (begin (print "c8a-normalize:関数定義ではありません" x)
+                      `(,(car x) ,(cadr x) ,(c8normalize-term (caddr x))))))) ;; (define var form)
+        (else
+         (print "c8a-normalize:関数定義ではありません" x)
+         (c8normalize-term x)))
+      (begin (print "c8a-normalize:関数定義ではありません" x)
+             (c8normalize-term x))))
+               
+
 (define c8def-func
   (lambda (first name lambda-expr)
     (let ((x (c8normalize-term lambda-expr)))
       `(,first ,name ,x))))
 
+
 (define c8normalize-term
   (lambda (m)
     (c8normalize m (lambda (x) x))))
+
 
 (define c8normalize
   (lambda (m k)
@@ -47,6 +69,26 @@
                ;;
                (else
                 (if (symbol? fun)
+                    (c8symbol-fun fun args k))))))
+          (else
+           (k m)))))
+
+(define c8normalize
+  (lambda (m k)
+    (cond ((cscm:pair? m)
+           (let ((fun (car m))
+                 (args (cdr m)))
+             (case fun
+               ((lambda) (c8lambda args k))
+               ((let) (c8let args k))
+               ((let*) (c8let* args k))
+               ((if) (c8if args k))
+               ((set!) (c8set! args k))
+               ((begin) (c8begin args k))
+               ((letrec) (c8letrec args k))
+               ((quote) (c8quote args k))
+               (else
+                (if (cscm:symbol? fun)
                     (c8symbol-fun fun args k))))))
           (else
            (k m)))))
@@ -195,6 +237,12 @@
 (define c8value?
   (lambda (x)
     (or (symbol? x)
+        (null? x)
+        (cscm:self-eval? x))))
+
+(define c8value?
+  (lambda (x)
+    (or (cscm:symbol? x)
         (null? x)
         (cscm:self-eval? x))))
 

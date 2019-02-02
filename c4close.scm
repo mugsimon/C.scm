@@ -24,6 +24,7 @@
       (error "CSCM:ERROR, c4close, not a definition" x)))
 
 (define (c4def-func first name lambda-expr)
+    ;;(print "cscm:debug, c4def-func, lambda-expr -> " name) ;; debug
   (let ((x (c4expr lambda-expr)))
     `(,first ,name ,x)))
 
@@ -76,6 +77,7 @@
   `(begin ,@(map c4expr args)))  
 
 (define (c4lambda args . free-vars)
+  ;;(print "cscm:debug, c4lambda, args -> " args) ;; debug
   (let ((params (car args))
         (body (cadr args)))
     (list 'lambda (cscm:union (if (null? free-vars)
@@ -107,7 +109,7 @@
 (define (c4def def)
   (let ((var (car def))
         (form (cadr def)))
-    (list var (if (var-liftable var) ;;(var-local-fun var)
+    (list var (if (var-liftable var)
                   (c4lambda (cdr form) (var-local-fun var))
                   (c4expr form)))))
 
@@ -132,7 +134,6 @@
 (define (c4symbol-fun fun args)
   (if (and (cscm:var? fun)
            (var-liftable fun))
-           ;;(var-local-fun fun))
       `(,fun ,@(var-local-fun fun) ,@(c4args args)) ;; ローカル関数呼び出し
       `(,fun ,@(c4args args))))
 

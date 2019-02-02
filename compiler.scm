@@ -36,6 +36,8 @@
         (else
          (cons (car x) (cscm:difference (cdr x) y)))))
 
+;; make-varに対応したmemq
+;; var-nameが同じなら同じ要素とみなす
 (define (cscm:memq elt lst)
   (let ((elt (if (cscm:var? elt)
                  (var-name elt)
@@ -50,6 +52,8 @@
                 lst
                 (loop (cdr lst))))))))
 
+;; make-varに対応したmember
+;; var-nameが同じなら同じ要素とみなす
 (define (cscm:member elt lst)
   (let ((elt (if (cscm:var? elt)
                  (var-name elt)
@@ -81,14 +85,27 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; make-varを持つSchemeコードで使用する
+;; make-varまたはsymbolなら#t
 (define (cscm:symbol? x)
   (or (cscm:var? x)
       (symbol? x)))
 
+;; make-varではなくペアなら#t
 (define (cscm:pair? x)
   (and (not (cscm:var? x))
        (pair? x)))
 
+(define (cscm:list? x)
+  (cond ((null? x)
+         #t)
+        ((cscm:var? x)
+         #f)
+        ((cscm:pair? x)
+         (cscm:list? (cdr x)))
+        (else
+         #f)))
+
+;; make-varなら#t
 (define (cscm:var? x)
   (and (list? x)
        (= (length x) 8)
@@ -103,9 +120,17 @@
        (list? (var-loc x))
        (boolean? (var-liftable x))))
 
+;; 20190115追加
+;; make-varならvar-nameを返す
+;; そうでなければ引数を返す
+(define (cscm:var-name x)
+  (if (cscm:var? x)
+      (var-name x)
+      x))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 新しい変数を用意する
-;; c0transform, c8anfで使用
+;; デフォルトでは「cscm番号」
 (define *newvar-name* "cscm")
 (define *newvar* 0)
 (define (newvar . name)
@@ -118,7 +143,6 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; primitiveとlibrary手続き
-;; anfとrenameで使用する
 (define *primitive* (list 'eqv? 'eq? 
 
                             'number? 'complex? 'real? 'rational? 'integer?
@@ -206,23 +230,22 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 各パスをロード
-(load "~/Dropbox/scheme/c.scm/c0transform.scm") ;;
-(load "~/Dropbox/scheme/c.scm/c1analysis.scm")
-(load "~/Dropbox/scheme/c.scm/c4close.scm")
-(load "~/Dropbox/scheme/c.scm/c5hoist.scm")
-(load "~/Dropbox/scheme/c.scm/c6contain-lambda.scm")
-(load "~/Dropbox/scheme/c.scm/c7scheme.scm")
-(load "~/Dropbox/scheme/c.scm/c8a-normalize.scm")
-(load "~/Dropbox/scheme/c.scm/c9generate.scm")
-(load "~/Dropbox/scheme/c.scm/c10or-and.scm")
-(load "~/Dropbox/scheme/c.scm/c12contain-set.scm")
-;;(load "~/Dropbox/scheme/c.scm/c13-gc.scm")
-(load "~/Dropbox/scheme/c.scm/c14rename.scm")
-(load "~/Dropbox/scheme/c.scm/c16call-code.scm")
-(load "~/Dropbox/scheme/c.scm/c17replace-cname.scm")
-(load "~/Dropbox/scheme/c.scm/c3liftable.scm")
-(load "~/Dropbox/scheme/c.scm/c18constant.scm")
-(load "~/Dropbox/scheme/c.scm/c19remove-args.scm")
+(load "~/Dropbox/scheme/c.scm_final/c0transform.scm") ;;
+(load "~/Dropbox/scheme/c.scm_final/c1analysis.scm")
+(load "~/Dropbox/scheme/c.scm_final/c4close.scm")
+(load "~/Dropbox/scheme/c.scm_final/c5hoist.scm")
+(load "~/Dropbox/scheme/c.scm_final/c6contain-lambda.scm")
+(load "~/Dropbox/scheme/c.scm_final/c7scheme.scm")
+(load "~/Dropbox/scheme/c.scm_final/c8a-normalize.scm")
+(load "~/Dropbox/scheme/c.scm_final/c9generate.scm")
+(load "~/Dropbox/scheme/c.scm_final/c10or-and.scm")
+(load "~/Dropbox/scheme/c.scm_final/c12contain-set.scm")
+(load "~/Dropbox/scheme/c.scm_final/c14rename.scm")
+;;(load "~/Dropbox/scheme/c.scm/c16call-code.scm")
+(load "~/Dropbox/scheme/c.scm_final/c17replace-cname.scm")
+(load "~/Dropbox/scheme/c.scm_final/c3liftable.scm")
+(load "~/Dropbox/scheme/c.scm_final/c18constant.scm")
+(load "~/Dropbox/scheme/c.scm_final/c19remove-args.scm")
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;
@@ -251,10 +274,16 @@
 (define *scheme-port* (current-output-port))
 (define *c-port* (current-output-port))
 
+;; Schemeにするコードのリスト
 (define *scheme* '())
+;; Cにするコードのリスト
 (define *cscm* '())
+;; Schemeの大域変数に束縛する定数のリスト
 (define *cscm-constant* '())
 (define *rename-alist* '())
+
+
+
 
 (define (compile input)
   (let ((tmp0 *scheme*)
@@ -278,16 +307,9 @@
   (compile-def input)
   (replace-cname)
   ;;((lambda (s x) (display s) (write x) (newline))  "cscm:debug, compile-sexp, *cscm* -> " *cscm*) ;; debug
-  (let loop ((cscm *cscm*))
-    (if (null? cscm)
-        #t
-        (let ((sexp (car cscm)))
-          (set-car! cscm (c16call-code sexp))
-          (loop (cdr cscm)))))
   ;;((lambda (s x) (display s) (write x) (newline))  "cscm:debug, compile-sexp, *cscm* -> " *cscm*) ;; debug
   (gen-c)
-  (gen-scheme)
-  )
+  (gen-scheme))
 
 (define (compile-file input)
   (let ((tmp0 *scheme-port*) ;; ポートを退避
@@ -299,12 +321,7 @@
       (for-each compile-def explst)) ;; 各関数定義をcompile-def
     ;;(print "cscm:debug, compile-file, *rename-alist* -> " *rename-alist*) ;; debug
     (replace-cname)
-    (let loop ((cscm *cscm*))
-      (if (null? cscm)
-          #t
-          (let ((sexp (car cscm)))
-            (set-car! cscm (c16call-code sexp)) ;; 
-            (loop (cdr cscm)))))
+    
     (gen-c)
     (gen-scheme)
     ;;((lambda (s x) (display s) (write x) (newline))  "cscm:debug, compile-file, *cscm* -> " *cscm*) ;; debug
@@ -333,30 +350,31 @@
 ;; トップレベルの定義を受け取り、ホイストまで行う
 ;; CとSchemeを判断し、*scheme*と*cscm*に格納する
 (define (compile-def input)
-  (let ((cexps (apply-funs input c0transform c1analysis c3liftable c4close c5hoist))) ;; 先頭にトップレベル定義, 残りにホイストされたローカル関数
+  (let ((cexps (apply-funs input c0transform c10or-and c1analysis c3liftable c4close c5hoist))) ;; 先頭にトップレベル定義, 残りにホイストされたローカル関数
     (let ((topexp (car cexps))) ;; もともとトップレベルの関数
       (if (cscm? topexp) ;; Cにできるかチェック
           (let ((name (cadr topexp)))
-            (let ((cname (make-c-name name))) ;; 接頭辞として c_ をつける
+            (let ((cname (make-c-name name))) ;; 接頭辞として c_ をつけた新しい名前
               (set-car! (cdr topexp) cname) ;; トップレベルの関数名を書き換える
-              (set! *rename-alist* (cons (cons name cname) *rename-alist*)) ;; リネームリストにトップレベルの関数を加える
-              (set! *cscm* (cons (c18constant topexp) *cscm*))))
-          (set! *scheme* (cons topexp *scheme*))))
-    (let loop ((cexps (cdr cexps)))
+              (set! *rename-alist* (cons (cons name cname) *rename-alist*)) ;; リネームリストにトップレベルの関数を加える　(名前 . 新しい名前)
+              (set! *cscm* (cons (c18constant topexp) *cscm*)))) ;; quoteを使ったリストをグローバル変数に置き換え, *cscm-constant*に定数が入る
+          (set! *scheme* (cons topexp *scheme*)))) ;; Cにできないときはこっち
+    (let loop ((cexps (cdr cexps))) ;; トップレベルの次はホイストされてトップレベルになった関数の検査
       (if (null? cexps)
-          (remove-c-args)
+          (remove-c-args) ;; すべての検査が終了したらc_cscmってなってる引数を削除する
           (let ((cexp (car cexps)))
             (if (cscm? cexp) ;; Cにできるかチェック
                 (let ((var (cadr cexp)))
                   (let ((name (var-name var)))
-                    (let ((cname (make-c-name name)))
-                      (set-var-name var cname)
-                      (set! *cscm* (cons (c18constant cexp) *cscm*)))))
-                (set! *scheme* (cons cexp *scheme*)))
+                    (let ((cname (make-c-name name))) ;; 接頭辞として c_ をつけた新しい名前
+                      (set-var-name var cname) ;; 新しい名前に書き換えた
+                      (set! *cscm* (cons (c18constant cexp) *cscm*))))) ;; quoteを使ったリストをグローバル変数に置き換え, *cscm-constant*に定数が入る
+                (set! *scheme* (cons cexp *scheme*))) ;; Cにできないときはこっち
             (loop (cdr cexps)))))))
 
+;; c_cscm...って名前の引数を削除する
 (define (remove-c-args)
-  (letrec ((sloop (lambda (s-lst)
+  (letrec ((sloop (lambda (s-lst) ;; Schemeにする関数定義から始める
                     (if (null? s-lst)
                         (cloop *cscm*)                        
                         (begin (set-car! s-lst (c19remove-args (car s-lst)))
@@ -385,7 +403,7 @@
     (if (null? cscm)
         #t
         (let ((expr (car cscm)))
-          (set-car! cscm (apply-funs expr c7scheme c10or-and c8a-normalize c14rename-def))
+          (set-car! cscm (apply-funs expr #;c7scheme #;c10or-and c8a-normalize c14rename-def))
           (loop (cdr cscm)))))
   (init-func) ;; 初期化コードを出力
   (dec-func) ;; 宣言を出力
@@ -398,15 +416,16 @@
           (loop (cdr cscm))))))
 
 (define (gen-scheme)
+  (gen-constant)
   (let loop ((scheme *scheme*))
     (if (null? scheme)
         #t
         (let ((expr (car scheme)))
-          (set-car! scheme (apply-funs expr c7scheme c14rename-def))
+          (set-car! scheme (apply-funs expr c14rename-def c7scheme))
           (loop (cdr scheme)))))
   (let loop ((scheme *scheme*))
     (if (null? scheme)
-        (gen-constant)
+        #t
         (let ((expr (car scheme)))
           (write expr *scheme-port*)
           (newline *scheme-port*)

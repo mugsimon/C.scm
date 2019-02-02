@@ -129,7 +129,6 @@
 
 ;; (f args)
 (define (c16symbol-fun name args)
-  ;;(print "cscm:debug, c16symbol-fun, name -> " name) ;; debug
   (cond ((or (and *cflag* ;; 自分がC
                   (cscm:var? name) ;; 呼び出し対象がトップレベル（もとからグローバル）ではない
                   (var-local-fun name) ;; ホイストされている
@@ -219,7 +218,6 @@
     (else (c16constant (car args)))))
 
 (define (c16vref name)
-  ;;(print "c.scm:debug, c16vref, name -> " name) ;; debug
   (cond ((and *cflag*
               (not (cscm:var? name)))
          `(cscm_gvref ,name))
@@ -229,54 +227,6 @@
 (define (c16set! args)
   (let ((var (car args))
         (exp (cadr args)))
-    ;;(print "cscm:debug, c16set!, var-> " var) ;; debug
     (if (cscm:var? var)
         `(set! ,var ,(c16expr exp))
         `(cscm_gset ,var ,(c16expr exp)))))
-
-;; 以下はオプショナル引数の関数
-;; Cの直接呼び出しに変更したのでgvref経由は使わない
-;; list
-(define (c16list args)
-  (let ((n (length args)))
-    (case n
-      ((0) `(cscm_apply0 (cscm_gvref list) ,@(c16args args)))
-      ((1) `(cscm_apply1 (cscm_gvref list) ,@(c16args args)))
-      ((2) `(cscm_apply2 (cscm_gvref list) ,@(c16args args)))
-      ((3) `(cscm_apply3 (cscm_gvref list) ,@(c16args args)))
-      ((4) `(cscm_apply4 (cscm_gvref list) ,@(c16args args)))
-      ((5) `(cscm_apply5 (cscm_gvref list) ,@(c16args args)))
-      ((6) `(cscm_apply6 (cscm_gvref list) ,@(c16args args)))
-      ((7) `(cscm_apply7 (cscm_gvref list) ,@(c16args args)))
-      ((8) `(cscm_apply8 (cscm_gvref list) ,@(c16args args)))
-      ((9) `(cscm_apply9 (cscm_gvref list) ,@(c16args args)))
-      ((10) `(cscm_apply10 (cscm_gvref list) ,@(c16args args)))
-      (else (print "c16list: 引数が多すぎます。出力結果に注意してください。")))))
-
-(define (c16append args)
-  (let ((n (length args)))
-    (case n
-      ((0) `(cscm_apply0 (cscm_gvref append) ,@(c16args args)))
-      ((1) `(cscm_apply1 (cscm_gvref append) ,@(c16args args)))
-      ((2) `(cscm_apply2 (cscm_gvref append) ,@(c16args args)))
-      ((3) `(cscm_apply3 (cscm_gvref append) ,@(c16args args)))
-      ((4) `(cscm_apply4 (cscm_gvref append) ,@(c16args args)))
-      ((5) `(cscm_apply5 (cscm_gvref append) ,@(c16args args)))
-      ((6) `(cscm_apply6 (cscm_gvref append) ,@(c16args args)))
-      ((7) `(cscm_apply7 (cscm_gvref append) ,@(c16args args)))
-      ((8) `(cscm_apply8 (cscm_gvref append) ,@(c16args args)))
-      (else (print "c16append: 引数が多すぎます。出力結果に注意してください。")))))
-
-(define (c16map args)
-  (let ((n (length args)))
-    (case n
-      ((0) `(cscm_apply0 (cscm_gvref map) ,@(c16args args)))
-      ((1) `(cscm_apply1 (cscm_gvref map) ,@(c16args args)))
-      ((2) `(cscm_apply2 (cscm_gvref map) ,@(c16args args)))
-      ((3) `(cscm_apply3 (cscm_gvref map) ,@(c16args args)))
-      ((4) `(cscm_apply4 (cscm_gvref map) ,@(c16args args)))
-      ((5) `(cscm_apply5 (cscm_gvref map) ,@(c16args args)))
-      ((6) `(cscm_apply6 (cscm_gvref map) ,@(c16args args)))
-      ((7) `(cscm_apply7 (cscm_gvref map) ,@(c16args args)))
-      ((8) `(cscm_apply8 (cscm_gvref map) ,@(c16args args)))
-      (else (print "c16map: 引数が多すぎます。出力結果に注意してください。")))))

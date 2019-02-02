@@ -49,13 +49,13 @@
 ;; (define var (lambda params body))
 ;; (define var expr)
 (define (c9generate x)
-  (if (pair? x)
+  (if (cscm:pair? x)
       (case (car x)
         ((define)
          (let ((first (car x))
                (name (cadr x))
                (form (caddr x)))
-           (if (and (pair? form)
+           (if (and (cscm:pair? form)
                     (eq? (car form) 'lambda))
                (c9def-func first
                            name
@@ -66,7 +66,8 @@
       (error "CSCM:ERROR, c9generate, not a definition" x)))
 
 (define (c9def-func first name lambda-expr)
-  (c9display c9cscm " " name) (c9expr lambda-expr #t)) ;; CSCM name
+  (c9display c9cscm " " (cscm:var-name name))
+  (c9expr lambda-expr #t)) ;; CSCM name
 
 (define (dec-func) ;; 宣言
   (let loop ((cscm *cscm*))
@@ -76,15 +77,18 @@
           (let ((name (cadr sexp))
                 (lambda-expr (caddr sexp)))
             (let ((params (cadr lambda-expr)))
-              (c9display c9cscm " " name "(")
-              (if (null? params)
-                  (c9display c9void)
-                  (let loop ((params params))
-                    (cond ((null? (cdr params))
-                           (c9display c9cscm " " (car params)))
-                          (else
-                           (c9display c9cscm " " (car params) ", ")
-                           (loop (cdr params))))))
+              (c9display c9cscm " " (cscm:var-name name) "(")
+              (cond ((null? params)
+                     (c9display c9void))
+                    ((cscm:var? params)
+                     (c9display c9cscm " " (cscm:var-name params)))
+                    (else 
+                     (let loop ((params params))
+                       (cond ((null? (cdr params))
+                              (c9display c9cscm " " (cscm:var-name (car params))))
+                             (else
+                              (c9display c9cscm " " (cscm:var-name (car params)) ", ")
+                              (loop (cdr params)))))))
               (c9print ");")))
           (loop (cdr cscm))))))
 
@@ -93,10 +97,10 @@
     (if (null? cscm)
         (newline *c-port*)
         (let ((expr (car cscm)))
-          (let ((name (cadr expr))
+          (let ((name (cscm:var-name (cadr expr)))
                 (lambda-expr (caddr expr)))
             (let ((params (cadr lambda-expr)))
-              (let ((n (if (or (pair? params)
+              (let ((n (if (or (cscm:pair? params)
                                (null? params))
                            (length params)
                            1)))
@@ -149,7 +153,7 @@
                   (else
                    (error "CSCM:ERROR, init-func" expr))))))
           (loop (cdr cscm))))))
-            
+
 (define c9*primitive* (list (cons 'eqv? "CSCM_EQV_P") (cons 'eq? "CSCM_EQ_P")
                             (cons 'number? "CSCM_NUMBER_P")
                             (cons '= "CSCM_EQUAL") (cons '< "CSCM_LESS") (cons '> "CSCM_MORE") (cons '<= "CSCM_LESSE") (cons '>= "CSCM_MOREE")
@@ -204,25 +208,23 @@
       (memq (car n) c9*special*)
       #t))
 
+;; トップレベルの関数定義を出力した直後はrは#t
 (define (c9expr form r) ;; リターン情報はそのまま渡す
-  ;;(print "cscm:debug, c9expr, form -> " form) ;; debug
-  (cond ((pair? form)
+  (cond ((cscm:pair? form) 
          (let ((fun (car form))
                (args (cdr form)))
-                                        ;(print "cscm:debug, c9expr, fun -> " fun) ;; debug
-           (cond ((symbol? fun)
+           (cond ((cscm:symbol? fun)
                   (case fun
                     ((lambda) (c9lambda args r))
                     ((let) (c9let args r))
                     ((if) (c9if args r))
                     ((set!) (c9set! args r))
-                    ((cscm_gset) (c9gset! args r))
                     ((quote) (c9quote args r))
                     ((list append map) (c9optional form r)) ;; fun args
                     ;;((+ - * / min max) (c9optional2n form r)) ;; fun args
                     (else (c9symbol-fun fun args r)))))))
         (else
-         (cond ((symbol? form)
+         (cond ((cscm:symbol? form)
                 (c9symbol form r))
                ((number? form)
                 (c9number form r))
@@ -236,18 +238,22 @@
 ;; (CSCM p1, CSCM p2){
 ;;   return ;
 ;; }
+;; rは#tが渡される
 (define (c9lambda args r)
   (c9display "(")
   (let ((params (car args))
         (body (cadr args)))
-    (if (null? params)
-        (c9display c9void) ;; (void)
-        (let loop ((params params))
-          (cond ((null? (cdr params))
-                 (c9display c9cscm " " (car params)))
-                (else
-                 (c9display c9cscm " " (car params) ", ")
-                 (loop (cdr params))))))
+    (cond ((null? params)
+           (c9display c9void)) ;; (void)
+          ((cscm:var? params)
+           (c9display c9cscm " " (cscm:var-name params)))
+          (else
+           (let loop ((params params))
+             (cond ((null? (cdr params))
+                    (c9display c9cscm " " (cscm:var-name (car params))))
+                   (else
+                    (c9display c9cscm " " (cscm:var-name (car params)) ", ")
+                    (loop (cdr params)))))))
     (c9print "){")
     (c9expr body #t) ;; リターン
     (c9print "}")))
@@ -259,19 +265,24 @@
           (m (cadr args))) ;; 本体
       (cond ((and (pair? val) ;; anf~への束縛がif式のとき (let ((anf (if ...))) m)
                   (eq? (car val) 'if))
-             (c9print c9cscm " " var ";") ;; CSCM var; 変数宣言
-             (c9expr val var)) ;; リターン先は宣言した変数
-            ((and (pair? val) ;;anf~への束縛がset!式のとき, ローカル変数への代入
+             (let ((name (cscm:var-name var)))
+               (c9print c9cscm " " name ";") ;; CSCM var; 変数宣言
+               (c9expr val name))) ;; リターン先は宣言した変数
+            ((and (pair? val) ;;anf~への束縛がset!式のとき
+                  (eq? (car val) 'set!)
+                  (c9anf? var))
+             (c9expr val #f)) ;; 代入式はリターンしないし, 一時変数に結果を束縛する必要もない
+            ((and (pair? val) ;; 束縛がset!のとき
                   (eq? (car val) 'set!))
-             (c9expr val #f)) ;; 代入式はリターンしないし, 一時変数に結果を束縛する必要もない
-            ((and (pair? val) ;; anf~への束縛がcscm_gset式のとき, グローバル変数への代入
-                  (eq? (car val) 'cscm_gset)) 
-             (c9expr val #f)) ;; 代入式はリターンしないし, 一時変数に結果を束縛する必要もない
+             (let ((name (cscm:var-name var)))
+               (c9print c9cscm " " name ";") ;; 
+               (c9expr val name)))
             (else
-             (c9display c9cscm " " var " = ") ;; CSCM var = 
+             (c9display c9cscm " " (cscm:var-name var) " = ") ;; CSCM var = 
              (c9expr val #f) ;; リターンしない
              (c9print ";")))
       (c9expr m r)))) 
+
 
 (define (c9if args r)
   (let ((m1 (car args))
@@ -287,34 +298,118 @@
 
 ;; return (f(...));
 ;; var = f(...);
-
+(define (c9symbol-fun fun args r)
+  (cond ((return? r)
+         (c9display "return ("))
+        ((symbol? r)
+         (c9display r " = ")))
+  (begin 
+    (cond ((assq fun c9*primitive*)
+           (c9display (cdr (assq fun c9*primitive*))))
+          (else
+           (c9display (cscm:var-name fun))))
+    (c9display "(")
+    (if (not (null? args))
+        (let loop ((args args))
+          (cond ((null? (cdr args))
+                 (c9expr (car args) #f))
+                (else
+                 (c9expr (car args) #f)
+                 (c9display ", ")
+                 (loop (cdr args))))))
+    (c9display ")")
+    (cond ((return? r)
+           (c9print ");"))
+          ((symbol? r)
+           (c9print ";")))))
 
 (define (c9symbol-fun fun args r)
   (cond ((return? r)
          (c9display "return ("))
         ((symbol? r)
          (c9display r " = ")))
-  (if (assq fun c9*cscm*)
-      (c9cscm_gvref fun args r) ;; cscm_gvref グローバル変数の参照
-      (begin 
-        (cond ((assq fun c9*primitive*)
-               (c9display (cdr (assq fun c9*primitive*))))
-              (else
-               (c9display fun)))
-        (c9display "(")
-        (if (not (null? args))
-            (let loop ((args args))
-              (cond ((null? (cdr args))
-                     (c9expr (car args) #f))
-                    (else
-                     (c9expr (car args) #f)
-                     (c9display ", ")
-                     (loop (cdr args))))))
-        (c9display ")")
-        (cond ((return? r)
-               (c9print ");"))
-              ((symbol? r)
-               (c9print ";"))))))
+  (cond ((assq fun c9*primitive*)
+         (c9display (cdr (assq fun c9*primitive*)))         
+         (if (null? args)
+             (c9display "(")
+             (begin (c9display "(")
+                    (c9expr (car args) #f)
+                    (c9args (cdr args) r))))
+        ((c9c? fun)
+         (c9display (cscm:var-name fun))
+         (if (null? args)
+             (c9display "(")
+             (begin (c9display "(")
+                    (c9expr (car args) #f)
+                    (c9args (cdr args) r))))
+        ((cscm:var? fun)
+         (let ((n (length args)))
+           (case n
+             ((0) (c9display "CSCM_APPLY0(" (var-name fun)))
+             ((1) (c9display "CSCM_APPLY1(" (var-name fun))
+              (c9args args r))
+             ((2) (c9display "CSCM_APPLY2(" (var-name fun))
+              (c9args args r))
+             ((3) (c9display "CSCM_APPLY3(" (var-name fun))
+              (c9args args r))
+             ((4) (c9display "CSCM_APPLY4(" (var-name fun))
+              (c9args args r))
+             ((5) (c9display "CSCM_APPLY5(" (var-name fun))
+              (c9args args r))
+             ((6) (c9display "CSCM_APPLY6(" (var-name fun))
+              (c9args args r))
+             ((7) (c9display "CSCM_APPLY7(" (var-name fun))
+              (c9args args r))
+             ((8) (c9display "CSCM_APPLY8(" (var-name fun))
+              (c9args args r))
+             ((9) (c9display "CSCM_APPLY9(" (var-name fun))
+              (c9args args r))
+             ((10) (c9display "CSCM_APPLY10(" (var-name fun))
+              (c9args args r))
+             (else
+              (error "CSCM:ERROR, c9symbol-fun, too many argument" n)))))
+        (else
+         (let ((n (length args))
+               (fun-str (symbol->string fun)))
+           (case n
+             ((0) (c9display "CSCM_APPLY0(CSCM_GVREF(")
+              (c9write fun-str) (c9display ")"))
+             ((1) (c9display "CSCM_APPLY1(CSCM_GVREF(")
+              (c9write fun-str) (c9display ")") (c9args args r))
+             ((2) (c9display "CSCM_APPLY2(CSCM_GVREF(")
+              (c9write fun-str) (c9display ")") (c9args args r))
+             ((3) (c9display "CSCM_APPLY3(CSCM_GVREF(")
+              (c9write fun-str) (c9display ")") (c9args args r))
+             ((4) (c9display "CSCM_APPLY4(CSCM_GVREF(")
+              (c9write fun-str) (c9display ")") (c9args args r))
+             ((5) (c9display "CSCM_APPLY5(CSCM_GVREF(")
+              (c9write fun-str) (c9display ")") (c9args args r))
+             ((6) (c9display "CSCM_APPLY6(CSCM_GVREF(")
+              (c9write fun-str) (c9display ")") (c9args args r))
+             ((7) (c9display "CSCM_APPLY7(CSCM_GVREF(")
+              (c9write fun-str) (c9display ")") (c9args args r))
+             ((8) (c9display "CSCM_APPLY8(CSCM_GVREF(")
+              (c9write fun-str) (c9display ")") (c9args args r))
+             ((9) (c9display "CSCM_APPLY9(CSCM_GVREF(")
+              (c9write fun-str) (c9display ")") (c9args args r))
+             ((10) (c9display "CSCM_APPLY10(CSCM_GVREF(")
+              (c9write fun-str) (c9display ")") (c9args args r))))))
+  (c9display ")")
+  (cond ((return? r)
+           (c9print ");"))
+          ((symbol? r)
+           (c9print ";"))))
+          
+(define (c9c? name)
+  (let ((name (symbol->string (cscm:var-name name))))
+    (let ((len (string-length name)))
+      (if (< len 3)
+          #f
+          (let ((head (substring name 0 2)))
+            (if (equal? head "c_")
+                #t
+                #f))))))
+  
 
 (define (c9cscm_gvref fun args r)
   (let ((cscm (assq fun c9*cscm*)))
@@ -331,14 +426,29 @@
          (c9display "return ("))
         ((symbol? r)
          (c9display r " = ")))
-  (if (assq x c9*primitive*)
-      (c9display (cdr (assq x c9*primitive*)))
-      (c9display x))
+  (cond ((cscm:var? x)
+         (c9display (var-name x)))
+        ((c9anf? x)
+         (c9display x))
+        (else
+         (c9display "CSCM_GVREF(")
+         (c9write (symbol->string x))
+         (c9display ")")))
   (cond ((return? r)
          (c9print ");"))
         ((symbol? r)
          (c9print ";"))))
 
+;; anfはmake-varされていないからグローバル変数との区別が必要
+(define (c9anf? x)
+  (if (cscm:var? x)
+      #f
+      (let ((x0 (symbol->string x)))
+        (if (< (string-length x0) 3)
+            #f
+            (let ((x1 (substring x0 0 3)))
+              (equal? x1 "anf"))))))
+          
 (define (c9number x r)
   (cond ((return? r)
          (c9display "return ("))
@@ -392,15 +502,35 @@
 (define (c9set! x r)
   (let ((var (car x))
         (exp (cadr x)))
-    (c9display var " = ")
-    (c9expr exp #f)
-    (c9print ";")
+    (cond ((cscm:var? var)
+           (c9display (var-name var) " = ")
+           (c9expr exp #f)
+           (c9print ";"))
+          (else
+           (c9display "CSCM_GVREF(")
+           (c9write (symbol->string var))
+           (c9display ") = ")
+           (c9expr exp #f)
+           (c9print ";")))
     (if (return? r)
         (begin (c9display "return (")
-               (c9expr exp #f)
-               (c9print ");")))))
+               (if (cscm:var? var)
+                   (c9display (var-name var))
+                   (begin (c9display "CSCM_GVREF(")
+                          (c9write (symbol->string var))
+                          (c9display ")")))
+               ;;(c9expr exp #f)
+               (c9print ");"))
+        (if (symbol? r)
+            (begin (c9display r " = ")
+               (if (cscm:var? var)
+                   (c9display (var-name var))
+                   (begin (c9display "CSCM_GVREF(")
+                          (c9write (symbol->string var))
+                          (c9display ")")))
+               ;;(c9expr exp #f)
+               (c9print ";"))))))
     
-
 (define (c9quote x r)
   (cond ((return? r)
          (c9display "return ("))
@@ -490,4 +620,4 @@
                (c9display ", ")
                (c9expr (car args) #f)
                (loop (cdr args)))))))
-    
+

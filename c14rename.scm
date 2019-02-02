@@ -1,6 +1,7 @@
 ;;; c.scm:c14renameはホイストが終了した各関数を受け取り、Cにできない名前を含む文字を変更する
 ;; (define var (lambda params body))
 ;; (define var expr)
+;; 20190119 make-varに対応させる
 (define (c14rename-def x)
   (if (pair? x)
       (case (car x)
@@ -8,7 +9,7 @@
          (let ((first (car x))
                (name (cadr x))
                (form (caddr x)))
-           (if (and (pair? form)
+           (if (and (cscm:pair? form)
                     (eq? (car form) 'lambda))
                (c14def-func first
                             name
@@ -28,12 +29,12 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (c14expr form)
-  (cond ((symbol? form)
+  (cond ((cscm:symbol? form)
          (c14vref form))
-        ((pair? form)
+        ((cscm:pair? form)
          (let ((fun (car form))
                (args (cdr form)))
-           (cond ((symbol? fun)
+           (cond ((cscm:symbol? fun)
                   (case fun
                     ((if) (c14if args))
                     ((and) (c14and args))
@@ -78,16 +79,16 @@
     `(lambda ,params ,(c14expr body))))
 
 (define (c14params params)
-  (cond ((list? params)
+  (cond ((cscm:list? params)
          (map c14vref params))
-        ((pair? params)
+        ((cscm:pair? params)
          (let loop ((params params)
                     (_params '()))
-           (if (symbol? params)
+           (if (cscm:symbol? params)
                (apply list* (reverse (cons (c14vref params) _params)))
                (loop (cdr params)
                      (cons (c14vref (car params)) _params)))))
-        ((symbol? params)
+        ((cscm:symbol? params)
          (c14vref params))
         (else
          '())))
@@ -158,17 +159,31 @@
                          (cons #\^ #\K)
                          (cons #\~ #\N)))
 
+;;(define (c14rename symbol)
+;;  (let ((s-symbol (string-copy (symbol->string symbol))))
+;;    (let ((l (string-length s-symbol)))
+;;      (let loop ((i 0))
+;;        (if (= i l)
+;;            (string->symbol s-symbol)
+;;            (let ((c (string-ref s-symbol i)))
+;;              (let ((ch (assq c c14*chars*)))
+;;                (if ch
+;;                    (begin (string-set! s-symbol i (cdr ch))
+;;                           (loop (+ i 1)))
+;;                    (loop (+ i 1))))))))))
+  
 (define (c14rename symbol)
-  (let ((s-symbol (string-copy (symbol->string symbol))))
+  (let ((s-symbol (string-copy (symbol->string (cscm:var-name symbol)))))
     (let ((l (string-length s-symbol)))
       (let loop ((i 0))
         (if (= i l)
-            (string->symbol s-symbol)
+            (if (cscm:var? symbol)
+                (begin (set-var-name symbol (string->symbol s-symbol))
+                       symbol)                       
+                (string->symbol s-symbol))
             (let ((c (string-ref s-symbol i)))
               (let ((ch (assq c c14*chars*)))
                 (if ch
                     (begin (string-set! s-symbol i (cdr ch))
                            (loop (+ i 1)))
                     (loop (+ i 1))))))))))
-  
-               
