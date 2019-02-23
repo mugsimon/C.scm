@@ -208,7 +208,7 @@
 
 (define (make-var name)
   (if (symbol? name)
-      (if (member name '(if cond case and or begin lambda delay let let* 
+      (if (member name '(if cond case and or begin lambda #;delay let let* 
                             letrec do set! quote quasiquote define macro))
           (error "CSCM:ERROR, cannot bind the keyword" name)
           (list name #f #f #f #f '() '() #f)) 

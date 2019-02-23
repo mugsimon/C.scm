@@ -100,7 +100,7 @@
          (c6args args))))
 
 (define (c6lambda args)
-  (print "cscm:debug, c6lambda, 内部lambda式を発見しました" args) ;; debug
+  ;;(print "cscm:debug, c6lambda, 内部lambda式を発見しました" args) ;; debug
   #t)
 
 (define (c6let args)
