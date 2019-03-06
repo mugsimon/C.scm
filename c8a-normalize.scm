@@ -89,7 +89,11 @@
                ((quote) (c8quote args k))
                (else
                 (if (cscm:symbol? fun)
-                    (c8symbol-fun fun args k))))))
+                    (c8symbol-fun fun args k)
+                    (c8normalize (let ((t (newvar "anf")))
+                                   `(let ((,t ,fun))
+                                      (,t ,@args))) k)          
+                    )))))
           (else
            (k m)))))
 
